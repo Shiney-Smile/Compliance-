@@ -1,0 +1,78 @@
+﻿<AML>
+ <Item type="Method" id="CEB7EA6FE5EE45289523D08BF996A9C1" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[Innovator innovator = this.getInnovator();
+
+LogManager.Configuration = config;
+var mainLogger = NLog.LogManager.GetCurrentClassLogger();
+string sourceId = this.getProperty("source_id","");
+string relatedId = this.getProperty("related_id","");
+string itemtype = this.getType();
+string sourceType = "";
+string relTypeLabelName = "Parameter";
+string historyMessage = "";
+
+switch(itemtype)
+{
+ case "pmi_ParamTemplate_Param_Rel" : 
+          sourceType = "pmi_ParameterTemplate";
+		   historyMessage = "\n'Sort order' : "+this.getProperty("sort_order","")+"\n'Min Value' : "+this.getProperty("pmi_min_value","")+"\n'Max Value' : "+this.getProperty("pmi_max_value","")+"\n'Text Value' : "+this.getProperty("pmi_text_value","")+"\n'Target Value' : "+this.getProperty("pmi_target_value","")+"Process area Value : "+this.getProperty("pmi_process_area","")+"\n'Display group' : "+this.getProperty("pmi_display_group_rel","")+"\n'Tolerance dimension' : "+this.getProperty("pmi_tolerance_dimension","")+"\n'Technical sheet' : "+this.getProperty("pmi_technical_sheet_value_rel","")+"\n'Plant configuration' : "+this.getProperty("pmi_plant_configuration","")+"\n'Distribution flag' : "+this.getProperty("pmi_distribution_flag","")+"\n'Defining attribute'  : "+this.getProperty("pmi_defining_attribute","");
+		  break;
+ case "pmi_mSpecParamTemplateRel" : 
+          sourceType = "pmi_mSpecParameterTemplate";
+          historyMessage = "Min Value: "+this.getProperty("pmi_min_value","")+"\nMax value: "+this.getProperty("pmi_max_value","")+"\nProcess Area: "+this.getProperty("pmi_process_area","")+"\nSampling Point: "+this.getProperty("pmi_sampling_point","")+"\nTolerance Dimension: "+this.getProperty("pmi_tolerance_dimension","")+"\nText Value: "+this.getProperty("pmi_text_value","")+"\nList Value: "+this.getProperty("pmi_list_value","")+"\nTarget Value: "+this.getProperty("pmi_target_value","")+"\nStd Dev: "+this.getProperty("pmi_stddev_value","")+"\nPlant Configuration: "+this.getProperty("pmi_plant_configuration","")+"\nMaterial Master Distribution: "+this.getProperty("pmi_distribution_flag","");
+		  break;
+ case "pmi_PCOParamTemplate_Param_Rel" : 
+          sourceType = "pmi_PCOParamTemplate";
+		  historyMessage = "\n'Material master distribution' : "+this.getProperty("pmi_distribution_flag","");
+		  break;
+ case "pmi_Marketparameter_Rel" : 
+          sourceType = "pmi_MarketParameterTemplate";
+		  break;
+  case "pmi_PrintOnlineTempParameters" : 
+          sourceType = "pmi_PrintOnlineObjectTemplate";
+		  break;
+ case "pmi_ParamTemplate_Param_Rel_PS" : 
+          sourceType = "pmi_PSParameterTemplate";
+          historyMessage = "Min Value: "+this.getProperty("pmi_min_value","")+"\nMax value: "+this.getProperty("pmi_max_value","")+"\nProcess Area: "+this.getProperty("pmi_process_area","")+"\nSampling Point: "+this.getProperty("pmi_sampling_point","")+"\nTolerance Dimension: "+this.getProperty("pmi_tolerance_dimension","")+"\nText Value: "+this.getProperty("pmi_text_value","")+"\nList Value: "+this.getProperty("pmi_List_value","")+"\nTarget Value: "+this.getProperty("pmi_target_value","")+"\nStd Dev: "+this.getProperty("pmi_stddev_value","")+"\nMBR Flag: "+this.getProperty("pmi_mbr_flag","")+"\nMeasurement Type: "+this.getProperty("pmi_measurement_type","")+"\nParameter Category: "+this.getProperty("pmi_parameter_category","");
+		  break;
+ case "pmi_ParameterTemplate_Prod_Rel" : 
+          sourceType = "pmi_ProductParameterTemplate";
+          historyMessage = "Sort Order: "+this.getProperty("sort_order","")+"\nDefining Attribute: "+this.getProperty("pmi_defining_attribute","")+"\nMaterial Master Distribution: "+this.getProperty("pmi_distribution_flag","");
+		  break;
+ case "pmi_FC_Parameters" : 
+          sourceType = "pmi_FCA_ParameterTemplate";
+          historyMessage = "Min Value: "+this.getProperty("pmi_min_value","")+"\nMax value: "+this.getProperty("pmi_max_value","")+"\nProcess Area: "+this.getProperty("pmi_process_area","")+"\nSampling Point: "+this.getProperty("pmi_sampling_point","")+"\nTolerance Dimension: "+this.getProperty("pmi_tolerance_dimension","")+"\nText Value: "+this.getProperty("pmi_text_value","")+"\nList Value: "+this.getProperty("pmi_list_value","")+"\nTarget Value: "+this.getProperty("pmi_target_value","")+"\nRemark: "+this.getProperty("pmi_remark","")+"\nOperator: "+this.getProperty("pmi_fc_operators","")+"\nStd Dev: "+this.getProperty("pmi_stddev_value","")+"\nMBR Flag: "+this.getProperty("pmi_mbr_flag","")+"\nMeasurement Type: "+this.getProperty("pmi_measurement_type","")+"\nParameter Category: "+this.getProperty("pmi_parameter_category","")+"\nUse for selection: "+this.getProperty("pmi_use_for_selection","");
+		  break;		  
+ default: sourceType = "Template";
+		  break;
+}
+
+Item paramItem = innovator.newItem("pmi_GlobalHarmonizedParameters","get");
+paramItem.setID(relatedId);
+paramItem.setAttribute("select", "pmi_parameter_number");
+paramItem = paramItem.apply();
+if(paramItem.isError())
+{
+    mainLogger.Error("MethodName : UpdateParameterTempHistory \n Message:  Error at history update: "+paramItem.getErrorString()+"");
+	return innovator.newError("Error exporting the data. "+paramItem.getErrorString());
+}
+string parameterNumber = paramItem.getItemByIndex(0).getProperty("pmi_parameter_number");
+Item method = innovator.newItem("", "get");
+method.setProperty("historyAction", "Add");
+method.setProperty("itemId", sourceId);
+method.setProperty("itemType", sourceType);
+method.setProperty("historyComments", "User Added "+parameterNumber+" Parameter to the "+relTypeLabelName+": \n"+historyMessage);
+method.setProperty("createHistoryContainer", "true");
+Item method1 = CLIPP_SDK.History.pmi_CreateHistoryInformaton(innovator,method,CCO);
+if(method1.isError())
+{
+    mainLogger.Error("MethodName : UpdateParameterTempHistory \n Message:  Error at history update: "+method1.getErrorString()+"");
+	return innovator.newError("Error exporting the data. "+method1.getErrorString());
+}
+
+return this;]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_UpdateParameterTempHistory</name>
+ </Item>
+</AML>
