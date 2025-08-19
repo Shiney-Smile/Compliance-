@@ -1,0 +1,187 @@
+﻿<AML>
+ <Item type="Method" id="E4C9681141924C54A46663143DBAB9E9" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[
+Innovator inn = this.getInnovator();
+string itemType = this.getType();
+string relName = itemType == "pmi_Substance" ? "pmi_SubstanceControlParameter" : itemType == "pmi_MaterialDisclosure" ? "pmi_MaterialDisclosure_GHP" : itemType == "pmi_RegulatorySpec" ? "pmi_RegulatorySpec_GHP" : "pmi_Regulation_ControlParam";
+string itemTypeLabel = itemType == "pmi_Substance" ? "Substance" : itemType == "pmi_MaterialDisclosure" ? "Material Disclosure" : itemType == "pmi_RegulatorySpec" ? "Regulatory Specification" : "Regulation ID";
+Item classItem = inn.newItem("pmi_PCOParamTemplate", "get");
+classItem.setProperty("classification", itemTypeLabel);
+classItem.setProperty("pmi_enable", "1");
+classItem.setProperty("generation", "0");
+classItem.setPropertyCondition("generation", "ge");
+classItem.setAttribute("select", "id,pmi_bre_rule");
+classItem = classItem.apply();
+if (classItem.isError())
+{
+    return this;
+}
+List <string> paramIds = new List <string> ();
+List <string> distributionFlag = new List <string> ();
+int itemCount = classItem.getItemCount();
+for (int index = 0; index < itemCount; index++)
+{
+    Item paramItem = inn.newItem("pmi_PCOParamTemplate_Param_Rel", "get");
+    paramItem.setProperty("source_id", classItem.getItemByIndex(index).getID());
+    paramItem.setAttribute("select", "id,related_id,pmi_distribution_flag");
+    paramItem = paramItem.apply();
+    if (paramItem.isError())
+    {
+        return inn.newError("Failed to get Parameter for the PCO Parameter Template "+paramItem.getErrorString());
+    }
+    string validationId = classItem.getItemByIndex(index).getPropertyAttribute("pmi_bre_rule","keyed_name");
+    if (string.IsNullOrEmpty(validationId))
+    {
+        int mParamCount = paramItem.getItemCount();
+        for (int mParamIndex = 0; mParamIndex < mParamCount; mParamIndex++)
+        {
+            Item paramIndividualItemDetails = paramItem.getItemByIndex(mParamIndex);
+            if(!paramIds.Contains(paramIndividualItemDetails.getProperty("related_id")))
+            {
+                paramIds.Add(paramIndividualItemDetails.getProperty("related_id"));
+                distributionFlag.Add(paramIndividualItemDetails.getProperty("pmi_distribution_flag"));
+            }
+        }
+    }
+    else
+    {
+         Item error = RunRules(this,validationId);
+        if (string.IsNullOrEmpty(error.getErrorString()))
+        {
+            int vParamCount = paramItem.getItemCount();
+            for (int vParamIndex = 0; vParamIndex < vParamCount; vParamIndex++)
+            {
+                Item paramIndividualItem = paramItem.getItemByIndex(vParamIndex);
+                if(!paramIds.Contains(paramIndividualItem.getProperty("related_id")))
+                {
+                    paramIds.Add(paramIndividualItem.getProperty("related_id"));
+                    distributionFlag.Add(paramIndividualItem.getProperty("pmi_distribution_flag"));
+                }
+            }
+        }
+    }
+}
+Item existingItem = GetExistingParameters(CCO, this.getID(), inn, relName);
+if(!existingItem.isError())
+{
+    int eParamCount = existingItem.getItemCount();
+    for (int eParamIndex = 0; eParamIndex < eParamCount; eParamIndex++)
+    {
+        Item existRelItem = existingItem.getItemByIndex(eParamIndex);
+        if(paramIds.Contains(existRelItem.getProperty("related_id")))
+        {
+            paramIds.Remove(existRelItem.getProperty("related_id"));
+            distributionFlag.Remove(existRelItem.getProperty("pmi_distribution_flag"));
+        }
+    }
+}
+if(paramIds.Any())
+{
+    if(!AddParametersItem(paramIds, this.getID(), distributionFlag, inn, CCO, relName))
+    {
+        return inn.newError("Failed to add the Parameter for the item ");
+    }
+}
+return this;
+}
+internal static Item RunRules(Item context, string validationId)
+{
+    Item applyMethod;
+    try{
+         applyMethod = context.apply(validationId);
+    }
+    catch(Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    return applyMethod;
+}
+internal static bool AddParametersItem(List<string> paramIds, string sourceId, List<string> distributionFlag, Innovator inn, Aras.Server.Core.CallContext CCO, string relName)
+{
+    Aras.Server.Security.Identity plmIdentity = Aras.Server.Security.Identity.GetByName("Aras PLM");
+    IDisposable elevatePermission = CCO.Permissions.GrantIdentity(plmIdentity);
+    try
+    {
+        // Item addParamItems = null;
+        for (int lstIdx = 0; lstIdx < paramIds.Count; lstIdx++)
+        {
+            if(!IsNullOrEmpty(paramIds[lstIdx]))
+            {
+                //string related_id = paramIds[lstIdx];
+                Item addParameters = inn.newItem(relName, "add");
+                addParameters.setProperty("source_id", sourceId);
+				//addParameters.setProperty("related_id", related_id); //PCO Changes
+                addParameters.setProperty("related_id", paramIds[lstIdx]);
+                addParameters.setProperty("pmi_is_added_manually","0");
+                addParameters.setProperty("pmi_distribution_flag",distributionFlag[lstIdx]);
+				addParameters = addParameters.apply();
+                if(addParameters.isError())
+                {
+                    return false;
+                }
+				// added for PCO, enable it when needed
+                // if(addParamItems == null)
+                // {
+                //   addParamItems = addParameters;
+                 // }
+                 // else
+                 // {
+                 //  addParamItems.appendItem(addParameters);
+                 // }
+                // addParameters = addParameters.apply();
+                // if(addParameters.isError())
+                // {
+                //     return false;
+                // }
+            }
+        }
+        // added for PCO, enable it when needed
+        // Item applyAppendedItems = null;
+        // if(addParamItems != null)
+        // {
+        // int ParamItemCount = addParamItems.getItemCount();
+       
+        // if(ParamItemCount == 1)
+        // {
+            // applyAppendedItems = inn.applyAML("<AML>"+addParamItems.node.OuterXml+"</AML>");
+        // }
+        // else
+        // {
+            // applyAppendedItems = inn.applyAML(addParamItems.dom.OuterXml);
+        // }
+        // if (applyAppendedItems.isError())
+        // {
+            // throw new InvalidOperationException(applyAppendedItems.getErrorString());
+        // }
+        // }
+    }
+    catch(Exception ex)
+    { 
+        
+    }
+    finally
+    {
+        elevatePermission?.Dispose();
+    }
+    return true;
+}
+internal static Item GetExistingParameters(Aras.Server.Core.CallContext CCO, string sourceId, Innovator inn, string relName)
+{
+    Aras.Server.Security.Identity plmIdentity = Aras.Server.Security.Identity.GetByName("Super User");
+    IDisposable elevatePermission = CCO.Permissions.GrantIdentity(plmIdentity);
+	try
+	{
+		Item existingParam = inn.newItem(relName, "get");
+		existingParam.setAttribute("select", "related_id");
+		existingParam.setProperty("source_id",sourceId);
+		return existingParam.apply();
+	}
+	finally
+	{
+		elevatePermission?.Dispose();
+	}]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_AutoPopulatePCOParameters</name>
+ </Item>
+</AML>
