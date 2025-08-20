@@ -1,0 +1,171 @@
+﻿<AML>
+ <Item type="Method" id="BC6F903928834CE2AD6A02E670BE159C" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[const inn = top.aras.newIOMInnovator();
+const multiListItems=[];
+class MultiListItem {
+  constructor(controlID, sourceListItem, sourceProperty) {
+    this.controlID = controlID;
+    this.sourceListItem = sourceListItem;
+    this.sourceProperty = sourceProperty;
+  }
+}
+const type=document.thisItem.getType();
+let item1;
+let item2;
+let item3;
+let item4;
+switch(type)
+{
+    case "pmi_RegulatorySpec":
+    {
+        // controlID=HtmldivId , sourceListItem=actual data source list item , sourceProperty=actual property name
+        item1 = new MultiListItem("pmi_SubFamiliesConfigMultiList", "pmi_SubFamiliesConfigList","pmi_part_sub_families");
+        item2 = new MultiListItem("pmi_ProdCategoryMultiList", "pmi_Compliance_ProductCategory","pmi_product_category");
+        item3 = new MultiListItem("pmi_AffectedCountriesMultiList", "PMI_Compliance Market Country","pmi_affected_countries");
+        item4 = new MultiListItem("pmi_AffectedRegionMultiList", "PMI_Compliance Market Region","pmi_affected_markets_region");
+        
+        multiListItems.push(item1);
+        multiListItems.push(item2);
+        multiListItems.push(item3);
+        multiListItems.push(item4);
+        break;
+    }
+    case "pmi_ProductIngredientReport":
+    {
+        // controlID=HtmldivId , sourceListItem=actual data source list item , sourceProperty=actual property name
+        item1 = new MultiListItem("pmi_CountryList", "PMI_Compliance Market Country","pmi_country");
+        item2 = new MultiListItem("pmi_SubmissionType", "pmi_Compliance_SubmissionType","pmi_submissiontype");
+        item3 = new MultiListItem("pmi_SubmissionMedia", "pmi_PIRSubmissionMedia","pmi_submissionmedia");
+        
+        multiListItems.push(item1);
+        multiListItems.push(item2);
+        multiListItems.push(item3);
+        break;
+    }
+    case "Document":
+    {
+        // controlID=HtmldivId , sourceListItem=actual data source list item , sourceProperty=actual property name
+        item1 = new MultiListItem("pmi_ConsumablesGenMultiList", "ItemConstruction","pmi_consumable_generation");
+        item2 = new MultiListItem("pmi_TechPlatformMultiList", "pmi_TechnologyPlatform","pmi_technology_platform");
+        item3 = new MultiListItem("pmi_DeviceGenMultiList", "R10384_RRP Product Configuration","pmi_device_generation");
+     
+        multiListItems.push(item1);
+        multiListItems.push(item2);
+        multiListItems.push(item3);
+        break;
+    }
+	case "pmi_Toxocology Spec" :
+    {
+        item1 = new MultiListItem("pmi_SubFamiliesConfigMultiList", "pmi_SubFamiliesConfigList","pmi_part_sub_families");
+        
+        multiListItems.push(item1);
+        break;
+    }
+    
+    case "pmi_ComplianceBOMHideRules" :
+    {
+        item1 = new MultiListItem("pmi_SubFamiliesConfigMultiList", "pmi_SubFamiliesConfigList","pmi_parent_sub_family");
+        
+        multiListItems.push(item1);
+        break;
+    } 
+    case "pmi_ComplianceFilteringTable" :
+    {
+        item1 = new MultiListItem("pmi_SubFamiliesConfigMultiList", "pmi_SubFamiliesConfigList","pmi_sub_family");
+        
+        multiListItems.push(item1);
+        break;
+    }
+}
+if(multiListItems.length>0)
+{
+    for(let count=0; count<multiListItems.length; count++)
+    {
+        const itemTypeDropdownList = [];
+        let getListValues = inn.newItem("List","get");
+        getListValues.setProperty("name",multiListItems[count].sourceListItem);
+        getListValues.setAttribute("select","id");
+        const getMultiValue = inn.newItem("Value", "get");
+        getMultiValue.setAttribute("select","label,value");
+        getListValues.addRelationship(getMultiValue);
+        getListValues = getListValues.apply();
+        if(getListValues.isError() || getListValues.isEmpty())
+        {
+            itemTypeDropdownList.push({disabled: false,id: 0,name: "",selected: false});
+        }
+        getListValues.getRelationships("Value");
+        const values = getListValues.getItemsByXPath("//Relationships/Item[@type=\"Value\"]");
+        const listItemCount = values.getItemCount();
+
+        const list_value = document.thisItem.getProperty(multiListItems[count].sourceProperty,"");
+        const selectedmulvalue = list_value.split(',');
+        
+        for(let index = 0; index < listItemCount; index+=1)
+        {
+            const itemByIndex = values.getItemByIndex(index);
+        	if(selectedmulvalue.includes(itemByIndex.getProperty("value")))
+        	{
+        		itemTypeDropdownList.push({disabled: false,
+        		id: itemByIndex.getProperty("value"),
+        		name: itemByIndex.getProperty("value")+" - "+itemByIndex.getProperty("label"),
+        		selected: true
+        		});
+        	}
+        	else{
+                itemTypeDropdownList.push({disabled: false,
+                id: itemByIndex.getProperty("value"),
+                name: itemByIndex.getProperty("value")+" - "+itemByIndex.getProperty("label"),
+                selected: false
+                });
+        	}
+        }
+        LoadMultiList(multiListItems[count].controlID,itemTypeDropdownList,multiListItems[count].sourceProperty);
+    }
+}
+
+function LoadMultiList(id,itemTypeDropdownList,dataSourceItem)
+{
+    $('#'+id).dropdown({
+    data: itemTypeDropdownList,
+    input: '<input type="text" maxLength="200" placeholder="Search">',
+    choice: function () {
+	  let selecetdValue ='';
+	  if(arguments[1]==undefined)
+	  {
+		  window.handleItemChange(dataSourceItem, selecetdValue);
+	  }
+	  else
+	  {
+		const prevValue = document.thisItem.getProperty(dataSourceItem);
+		let lstprevValue = [];
+        if(prevValue==undefined || prevValue=="")
+		{		 
+			lstprevValue = [];
+		}
+		else{lstprevValue = prevValue.split(',');}
+		if(arguments[1].selected)
+		{
+			 
+			 lstprevValue.push(arguments[1].id);
+			 selecetdValue = lstprevValue.join(',');
+			 window.handleItemChange(dataSourceItem, selecetdValue);
+		}
+		else
+		{
+			const index = lstprevValue.indexOf(arguments[1].id);
+			if (index > -1) { 
+			// only splice array when item is found
+			lstprevValue.splice(index, 1); // 2nd parameter means remove one item only
+			}
+			selecetdValue = lstprevValue.join(',');
+			window.handleItemChange(dataSourceItem, selecetdValue);
+		}
+	  }
+    }
+});
+}]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_LoadMultiListValuesOnForm</name>
+ </Item>
+</AML>
