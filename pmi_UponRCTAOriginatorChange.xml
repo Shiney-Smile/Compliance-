@@ -1,0 +1,236 @@
+﻿<AML>
+ <Item type="Method" id="E7241BBBEC134B64BF5CEF29F3C24A87" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[Innovator innovator = this.getInnovator();
+string LogGroupVariableValue = CCO.Utilities.GetVarValue("pmi_AwsTargetLogGroup", null);
+if (string.IsNullOrEmpty(LogGroupVariableValue)) {
+    return innovator.newError("Unable to get AWS Log Group Variable. Please contact Administrator.");
+}
+awsTarget.LogGroup = LogGroupVariableValue;
+LogManager.Configuration = config;
+var mainLogger = NLog.LogManager.GetCurrentClassLogger();
+
+Aras.Server.Security.Identity plmIdentity = Aras.Server.Security.Identity.GetByName("Aras PLM");
+IDisposable elevatePermission = CCO.Permissions.GrantIdentity(plmIdentity);
+try
+{
+    string rctaItemId = this.getItemsByXPath("//Item[@type='pmi_RCTA']").getAttribute("id");
+    
+    Item rctaItem = this;
+    
+    string rctaCoordId = rctaItem.getProperty("owned_by_id", string.Empty);
+    string rctaActOwnerId = rctaItem.getProperty("managed_by_id", string.Empty);
+    string rctaStatus = rctaItem.getProperty("state", string.Empty);
+    Dictionary<string, string> allActOwners = new Dictionary<string, string>();
+    Item actOwnerItem = ValidateActionOwner(innovator, allActOwners, rctaActOwnerId);
+    if (actOwnerItem != null && actOwnerItem.isError())
+    {
+        return actOwnerItem;
+    }
+    Item EmailActOwner = SendEmailToActionOwner(innovator, CCO, allActOwners, rctaItem, rctaStatus);
+    if (EmailActOwner != null && EmailActOwner.isError())
+    {
+	    return EmailActOwner;
+    }
+    
+}
+catch(Exception ex)
+{
+    mainLogger.Error("MethodName : pmi_UponRCTAOriginatorChange \n Message: "+ex.Message);
+    return innovator.newError(ex.Message);
+}
+finally {
+    elevatePermission?.Dispose();
+    if(errorDictionary.Count>0)
+    {
+        mainLogger.Error("\n MethodName : pmi_UponRCTAOriginatorChange \n Message: "+string.Join(" ",errorDictionary));
+    }
+}
+
+return this;
+}
+List<string> errorDictionary = new List<string>();
+internal Item ValidateActionOwner(Innovator innovator, Dictionary<string, string> allActOwners, string rctaActOwnerId)
+{
+    Item recipientItem = innovator.newItem("Identity", "get");
+    recipientItem.setID(rctaActOwnerId);
+    recipientItem.setAttribute("select", "keyed_name,is_alias");
+    Item recipient = recipientItem.apply();
+    if (recipient.isError())
+    {
+        errorDictionary.Add("MethodName : pmi_UponRCTAOriginatorChange \n Message: Error while trying to fetch action owner information - "+recipient.getErrorString());
+    }
+    if (String.Compare(recipient.getProperty("is_alias", ""), "1", StringComparison.Ordinal) == 0)
+    {
+        Item user = innovator.newItem("User", "get");
+        user.setAttribute("select", "email,logon_enabled");
+        Item userAlias = user.createRelationship("Alias", "get");
+        userAlias.setRelatedItem(recipient);
+        user = user.apply();
+        if (user.isError())
+        {
+            errorDictionary.Add("MethodName : pmi_UponRCTAOriginatorChange \n Message: Error while trying to fetch email for action owner - "+user.getErrorString());
+        }
+        string userEmail = user.getProperty("email", "");
+        string logonEnabled = user.getProperty("logon_enabled", "");
+        if (!string.IsNullOrEmpty(userEmail) && userEmail.Contains("@"))
+        {
+            if (!string.IsNullOrEmpty(logonEnabled) && logonEnabled == "1")
+            {
+                try
+                {
+                    if (!allActOwners.ContainsKey(recipient.getID()))
+                    {
+                        allActOwners.Add(recipient.getID(), userEmail);
+                    }
+                }
+                catch (ArgumentNullException e)
+                {
+                    errorDictionary.Add("Selected action owner has no id. "+e.Message);
+                }
+            }
+            else
+            {
+                errorDictionary.Add("Selected Action owner cannot login to ARAS."+recipient.getProperty("keyed_name", ""));
+            }
+        }
+        else
+        {
+            errorDictionary.Add("Action Owner " + recipient.getProperty("keyed_name", "") + " has invalid email. Please contact Support Team.");
+        }
+    }
+    else
+    {
+        Item users = GetValidAliasMemberIdentities(innovator, recipient);
+        if (users.isError())
+        {
+            return users;
+        }
+        int userCount = users.getItemCount();
+        for (int uIndex = 0; uIndex < userCount; uIndex++)
+        {
+            Item user = users.getItemByIndex(uIndex);
+            string userID = user.getID();
+            Item ident = user.getItemsByXPath("//Item[@type='User'][@id='" + userID + "']/Relationships/Item[@type='Alias']/related_id/Item[@type='Identity']");
+            try
+            {
+                if (!allActOwners.ContainsKey(ident.getID()))
+                {
+                    allActOwners.Add(ident.getID(), user.getProperty("email"));
+                }
+            }
+            catch (ArgumentNullException e)
+            {
+                errorDictionary.Add("Selected Action owner has no id. "+e.Message);
+            }
+        }
+    }
+    return null;
+}
+
+internal Item GetValidAliasMemberIdentities(Innovator innovator, Item topIdent)
+{
+    Item groupTree = innovator.newItem("Identity", "GetItemRepeatConfig");
+    groupTree.setID(topIdent.getID());
+    Item memberLink = groupTree.createRelationship("Member", "get");
+    memberLink.setAttribute("repeatProp", "related_id");
+    memberLink.setAttribute("repeatTimes", "0");
+    groupTree = groupTree.apply();
+    if(groupTree.isError())
+	{
+	    errorDictionary.Add("MethodName : pmi_UponRCTAOriginatorChange \n Message: Error while trying to fetch child identity details"+groupTree.getErrorString());
+	}
+    Item aliasMembers = groupTree.getItemsByXPath("//Item[@type='Identity'][is_alias='1']");
+    System.Xml.XmlDocument dom = aliasMembers.dom;
+    XmlNodeList idList = dom.SelectNodes("//Item[@type='Identity']/id/text()");
+    Item users = innovator.newItem("User", "get");
+    users.setProperty("logon_enabled", "1");
+    users.setPropertyCondition("email", "like");
+    users.setProperty("email", "%@%");
+    Item rel = users.createRelationship("Alias", "get");
+    Item orClause = rel.newOR();
+    foreach (XmlText t in idList)
+    {
+        orClause.setProperty("related_id", t.Value);
+    }
+    users = users.apply();
+    if (users.isError() || users.isEmpty())
+    {
+        errorDictionary.Add("No users with valid email in action owner group " + topIdent.getProperty("keyed_name", "") + ".");
+    }
+    return users;
+}
+
+internal Item SendEmailToActionOwner(Innovator innovator, Aras.Server.Core.CallContext CCO, Dictionary<string, string> allActOwners, Item controlledItem, string rctaStatus)
+{
+    Aras.Server.Core.CallContext myCallContext = CCO;
+    System.Net.Mail.MailMessage email = new System.Net.Mail.MailMessage();
+    string itemId = controlledItem.getID();
+    string itemTypeName = controlledItem.getType();
+    string typeId = controlledItem.getAttribute("typeId");
+    string itemTypeLabel = innovator.getItemById("ItemType", typeId).getProperty("label");
+    string itemNumber = controlledItem.getProperty("pmi_number ", string.Empty);
+    string description = System.Text.RegularExpressions.Regex.Replace(controlledItem.getProperty("pmi_description", string.Empty), @"\t|\n|\r", "");
+    string emailUrl = GetItemURL(innovator, CCO, itemId, itemTypeName);
+    string subject = string.Format(CultureInfo.InvariantCulture, @"For your action, {0} has been assigned to you", itemNumber);
+    
+    string toAddress = string.Join(",", allActOwners.Select(x => x.Value).ToArray());
+    var currentDate = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+    
+    StringBuilder htmlContent = new StringBuilder();
+    htmlContent.Append("<BODY>");
+    htmlContent.Append("<p>Dear CLIPP User,</p>");
+    htmlContent.Append("<font>This is to notify that, the " + itemNumber + " has been assigned to you.<br/></font>");
+    htmlContent.Append("<font>Description: </font><font>" + description + "<br/></font>");
+    htmlContent.Append("<font>Creation Date: </font><font>" + controlledItem.getProperty("created_on").Replace("T", "-") + " (CET)<br/></font>");
+    htmlContent.Append("<font>RCTA Status: </font><font>"+rctaStatus+"<br/></font>");
+    htmlContent.Append("<font>Assigned Owner: </font><font>" + controlledItem.getPropertyAttribute("managed_by_id", "keyed_name") + " <br/></font>");
+    
+    htmlContent.Append("<font>Assigned Date: </font><font>"+currentDate.Replace("T", "-")+" (CET)<br/></font>");
+    htmlContent.Append("<font>Click Here To: </font>");
+    htmlContent.Append("<a href='" + emailUrl + "'>Navigate to " + itemNumber + "</a><br/><br/></p>");
+    htmlContent.Append("<p><font>Thanks for your collaboration<br/></font>");
+    htmlContent.Append("<font>Your CLIPP Team</font><br/><br/></p>");
+    htmlContent.Append("<p style='color:red'>Note: This is a system generated email. PLEASE DO NOT REPLY.</p>");
+    htmlContent.Append("</BODY>");
+    email.To.Add(toAddress);
+    email.IsBodyHtml = true;
+    email.Subject = subject;
+    Item getVariable = innovator.newItem("Variable","get");
+    getVariable.setProperty("id","9AAF644847964D87A3C02EFE4B77157A");
+    getVariable.setAttribute("select","value,default_value");
+    getVariable = getVariable.apply();
+    if(getVariable.isEmpty() || getVariable.isError())
+    {
+        return innovator.newError("Variables defined for Email From address not found");
+    }
+    string fromEmailAddress = getVariable.getProperty("value");
+    string instanceName = getVariable.getProperty("default_value");
+    email.From = new System.Net.Mail.MailAddress(fromEmailAddress, instanceName);
+    email.Body = htmlContent.ToString();
+    email.BodyEncoding = System.Text.Encoding.UTF8;
+    email.SubjectEncoding = System.Text.Encoding.UTF8;
+    try
+    {
+        myCallContext.Email.SetupSmtpMailServerAndSend(email);
+    }
+    catch (Exception ex)
+    {
+        errorDictionary.Add("MethodName: pmi_UponRCTAOriginatorChange \n Exception raised when sending mail: " + ex.Message);
+        throw new Exception("MethodName: pmi_UponRCTAOriginatorChange \n Exception raised when sending mail: " + ex.Message);
+    }
+    return null;
+}
+
+internal string GetItemURL(Innovator innovator, Aras.Server.Core.CallContext CCO, string itemId, string itemTypeName)
+{
+    string protocol = CCO.Context.Request.IsHttps ? "https" : "http";
+    string hostName = CCO.Context.Request.Host.Host;
+    string[] urlSegments = new Uri(CCO.Request.GetDisplayUrl()).Segments;
+    string dbName = urlSegments[1];
+    string itemURL = (protocol + "://" + hostName + "/" + dbName + "?StartItem=" + itemTypeName + ":" + itemId);
+    return itemURL;]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_UponRCTAOriginatorChange</name>
+ </Item>
+</AML>

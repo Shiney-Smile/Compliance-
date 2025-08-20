@@ -1,0 +1,88 @@
+﻿<AML>
+ <Item type="Method" id="C3CBA988D76941969B41B068F2860336" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[Innovator inn = this.getInnovator();
+
+string itemId = this.getProperty("id");
+string ActOwnerNew = this.getProperty("managed_by_id");
+string state = this.getProperty("state");
+
+string ActOwnerOld = "";
+string OwnedById = "";
+
+Item RCTAAction = inn.newItem("pmi_RCTA", "get");
+RCTAAction.setProperty("id", itemId);
+RCTAAction.setAttribute("select", "id,managed_by_id,owned_by_id");
+RCTAAction = RCTAAction.apply();
+
+if (RCTAAction.isError()) {
+    return inn.newError("Error while getting RCTA Action :" + RCTAAction.getErrorString());
+}
+
+ActOwnerOld = RCTAAction.getProperty("managed_by_id");
+OwnedById = RCTAAction.getProperty("owned_by_id");
+
+if (ActOwnerOld != ActOwnerNew && !string.IsNullOrEmpty(ActOwnerOld)) {
+
+    if (state == "Draft") {
+
+        // retrieve the "Active" workflow activity of DCA
+        Item wfcItem = inn.newItem("pmi_RCTA", "get"); // work flow controlled Item wfcItem
+        wfcItem.setID(itemId);
+        Item workflow = inn.newItem("Workflow", "get");
+        workflow.setAttribute("select", "id, source_id, source_type, related_id");
+        Item workflowProcess = inn.newItem("Workflow Process", "get");
+        workflowProcess.setAttribute("select", "id, name");
+        Item wfpa = inn.newItem("Workflow Process Activity", "get");
+        wfpa.setAttribute("select", "related_id");
+        Item activity = inn.newItem("Activity", "get");
+        activity.setProperty("state", "Active");
+        activity.setAttribute("select", "id");
+        Item activityAssign = inn.newItem("Activity Assignment", "get");
+        activityAssign.setProperty("related_id", ActOwnerOld);
+        activityAssign.setAttribute("select", "id, source_id, related_id");
+        activity.addRelationship(activityAssign);
+        wfpa.setRelatedItem(activity);
+        workflowProcess.addRelationship(wfpa);
+        workflow.setRelatedItem(workflowProcess);
+        wfcItem.addRelationship(workflow);
+        wfcItem = wfcItem.apply();
+
+        if (wfcItem.isError()) {
+            return inn.newError("Error retrieving Workflow Process Item: " + wfcItem.getErrorString());
+        }
+
+        Item act = wfcItem.getItemsByXPath("//Item[@type='Workflow Process Activity']/related_id/Item[@type='Activity']");
+
+        if (act.getItemCount() != 1) {
+            return inn.newError("Unable to get activity");
+        }
+
+        Item actAssignment = wfcItem.getItemsByXPath("//Item[@type='Activity Assignment']");
+
+        if (actAssignment.getItemCount() > 0) {
+
+            if (state == "Draft") {
+                string AssignmentId = actAssignment.getItemByIndex(0).getProperty("id");
+                Item updateAssig = inn.getItemById("Activity Assignment", AssignmentId);
+                updateAssig.setAction("edit");
+                updateAssig.setProperty("related_id", ActOwnerNew);
+                updateAssig = updateAssig.apply();
+                
+                if(updateAssig.isError()){
+                    return inn.newError("Error while assigning new Action Owner :" + updateAssig.getErrorString());
+                }
+               
+            }
+        }
+
+        // logic for sending mail 
+        Item sendMail = this.apply("pmi_UponRCTAOriginatorChange");
+
+    }
+}
+return this;]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_UpdateRCTASignOffAndNotify</name>
+ </Item>
+</AML>
