@@ -1,0 +1,17 @@
+Innovator innovator = this.getInnovator();
+string itemId = this.getID();
+string [] relationshipArray = this.getProperty("relshipNames").Split('|');
+List <string> relationshipCount = new List <string>();
+foreach (string relationship in relationshipArray) 
+{
+    string sqlQuery = "SELECT COUNT(ID) FROM [INNOVATOR].[" + CCO.DB.GenerateTableName(relationship) + "] WHERE SOURCE_ID = '" + itemId + "'";
+    if(relationship.Equals("tgv_pmi_WP_Orders_PPO_TGV"))
+    {
+        sqlQuery = "SELECT COUNT(ID) FROM [INNOVATOR].[" + CCO.DB.GenerateTableName("PMI_WORKPACKAGERELORDERS") + "] WHERE RELATED_ID = '" + itemId + "'";
+    }
+    Item result = innovator.applySQL(sqlQuery);
+    relationshipCount.Add(result.getProperty("column1").ToString());
+}
+Item resultItem = innovator.newItem();
+resultItem.setProperty("result", string.Join("|", relationshipCount.ToArray()));
+return resultItem;
