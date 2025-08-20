@@ -1,0 +1,248 @@
+﻿<AML>
+ <Item type="Method" id="B2BBE121A98548AD971B4C572DB9C49C" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[const innovator = new Innovator();
+const thisUserID = innovator.getUserID();
+const lifecycleStatus = document.thisItem.getProperty("state");
+const originator = document.thisItem.getProperty("owned_by_id");
+const itemTypeID = document.thisItem.getProperty("id");
+const businessAdminDevelopment = 'B8C7A709942D48529AEB28C0DC552123';
+const productRegulatoryCompliance = 'DA512F9406FA40FABAF44DCD91FCAA48';
+const productToxicologicalAssessment = '2B071A2F03F64262B9FE7D22AF084383';
+const businessAdmin = '66E602398A98416586B399016D76D4A4';
+const isEditMode = window.document.isEditMode;
+const action = document.thisItem.getAction(); 
+const loggedUserIdenlst = aras.getIdentityList();
+var input5 = getFieldByName("pmi_released_date");
+if (isEditMode && input5) {
+    input5.getElementsByTagName("input")[0].disabled = true;
+}
+// getFieldByName('pmi_initiative_access_control').getElementsByTagName('input')[0].disabled = true;
+const divCnt = document.getElementsByName('multiList_div').length;
+const divCnt1 = document.getElementsByName('multiList_div1').length;
+const divCnt2 = document.getElementsByName('multiList_div2').length;
+
+var initialInformation = ["pmi_productgroup","pmi_technologyplatform","pmi_type_of_request","pmi_reason_for_request","pmi_rctamaterialimpact","pmi_requested_response_time","pmi_exposure_duration","pmi_product_exposure","pmi_type_external_panel","pmi_ext_consumers_other","pmi_type_of_panel","pmi_num_of_panelists"];
+
+var initialInformationTA = ["pmi_description", "pmi_intended_use","pmi_detailed_prod_mat_descrip","pmi_additional_information","pmi_other_destination_info","pmi_supplier_name","pmi_supplier_address","pmi_supplier_contact_person","pmi_supplier_material_code"];
+
+var regulatoryAssessment = ["pmi_regulatory_assessor", "pmi_regulatory_reviewer","pmi_disclosure_id","pmi_disclosure_requested_date","pmi_disclosure_received_date"];
+
+var regulatoryAssessmentTA = ["pmi_other_limitations", "pmi_regulatory_comments"];
+
+var toxicologicalAssessment = ["pmi_toxicological_assessor", "pmi_toxicological_reviewer","pmi_analysis_requested_date","pmi_analytical_resultreceived","pmi_toxicological_recommendation","pmi_tox_evaluation_number","pmi_sample_code"];
+
+var toxicologicalAssessmentTA = ["pmi_other_analysis_requested", "pmi_toxicological_comments"];
+
+var internalToxicologicalAssessment  = ["pmi_ita_recommendation", "pmi_ita_pdev_project_id","pmi_ita_meval_code"];
+var internalToxicologicalAssessmentTA = ["pmi_ita_recommend_comment","pmi_ita_pi2k_overall_recommend","pmi_ita_pi2k_tox_recommend","pmi_ita_pi2k_regulatry_recommend","pmi_ita_pi2k_use_class","pmi_ita_journal_notes","pmi_ita_pi2k_prod_assesrecommend"];
+
+var setFieldEnabledInput = function(fieldName)
+{
+        for (i = 0; i < fieldName.length; i++)
+        {
+            var input = getFieldByName(fieldName[i]);
+            if (isEditMode && input) {
+                input.getElementsByTagName("input")[0].disabled = false;
+                if(input.getElementsByTagName("button")[0])
+                {
+                	input.getElementsByTagName("button")[0].disabled = false;
+                }
+            }
+        }
+};
+var setFieldEnabledTextArea = function(fieldName)
+{
+        for (i = 0; i < fieldName.length; i++)
+        {
+            var input1 = getFieldByName(fieldName[i]);
+            if (isEditMode && input1) {
+                input1.getElementsByTagName("textarea")[0].disabled = false;
+            }
+        }
+};
+
+var setFieldDisabledInput = function(fieldName)
+{
+        for (i = 0; i < fieldName.length; i++)
+        {
+            var input2 = getFieldByName(fieldName[i]);
+            if (isEditMode && input2) {
+                input2.getElementsByTagName("input")[0].disabled = true;
+                if(input2.getElementsByTagName("button")[0])
+                {
+                	input2.getElementsByTagName("button")[0].disabled = true;
+                }
+            }
+        }
+};
+var setFieldDisabledTextArea = function(fieldName)
+{
+        for (i = 0; i < fieldName.length; i++)
+        {
+            var input3 = getFieldByName(fieldName[i]);
+            if (isEditMode && input3) {
+                input3.getElementsByTagName("textarea")[0].disabled = true;
+            }
+        }
+};
+
+
+if (!loggedUserIdenlst.includes(businessAdmin) || (lifecycleStatus == 'Cancelled'))
+{
+    var input4 = getFieldByName('managed_by_id');
+    if (isEditMode && input4) {
+        input4.getElementsByTagName("input")[0].disabled = true;
+	    input4.getElementsByTagName("button")[0].disabled = true;
+    }
+    
+}
+
+if((itemTypeID === undefined) || (loggedUserIdenlst.includes(originator) && (lifecycleStatus == 'Draft' || lifecycleStatus == 'Final Review')) || (loggedUserIdenlst.includes(businessAdminDevelopment)))
+{
+    setFieldEnabledInput(initialInformation);
+    setFieldEnabledTextArea(initialInformationTA);
+    
+    if(!document.thisItem.getProperty('locked_by_id') && document.thisItem.getProperty('id') != undefined)
+    { 
+        if(divCnt > 0)
+        {
+        	for(let cnt = 0;cnt < divCnt; cnt++)
+        	{
+        		document.getElementsByName('multiList_div')[cnt].style.pointerEvents = 'none';
+        	}
+        }
+    }
+    else
+    {
+        if(divCnt>0)
+        {
+            for(let cnt=0;cnt<divCnt;cnt++)
+            {
+                const type =document.thisItem.getType();
+                if(type =="Activity2")
+                {
+                document.getElementsByName('multiList_div')[cnt].style.pointerEvents = 'none';
+                }
+                else
+                {
+                    document.getElementsByName('multiList_div')[cnt].style.pointerEvents = 'auto';
+                }
+            }
+        }
+    }
+}
+else
+{
+    setFieldDisabledInput(initialInformation);
+    setFieldDisabledTextArea(initialInformationTA);
+
+    if(divCnt > 0)
+    {
+    	for(let cnt = 0;cnt < divCnt; cnt++)
+    	{
+    		document.getElementsByName('multiList_div')[cnt].style.pointerEvents = 'none';
+    	}
+    }
+}
+   
+     if(((itemTypeID === undefined || ((lifecycleStatus == 'Regulatory and Tox Assessment') || lifecycleStatus == 'Final Review')) && loggedUserIdenlst.includes(productRegulatoryCompliance)) || (loggedUserIdenlst.includes(businessAdminDevelopment)))
+{
+    setFieldEnabledInput(regulatoryAssessment);
+    setFieldEnabledTextArea(regulatoryAssessmentTA);
+   
+   if(!document.thisItem.getProperty('locked_by_id') && document.thisItem.getProperty('id') != undefined)
+    {
+        if(divCnt1 > 0)
+        {
+        	for(let cnt = 0;cnt < divCnt1; cnt++)
+        	{
+        		document.getElementsByName('multiList_div1')[cnt].style.pointerEvents = 'none';
+        	}
+        }
+    }
+    else
+    {
+        if(divCnt1>0)
+        {
+            for(let cnt=0;cnt<divCnt1;cnt++)
+            {
+                const type =document.thisItem.getType();
+                if(type =="Activity2")
+                {
+                document.getElementsByName('multiList_div1')[cnt].style.pointerEvents = 'none';
+                }
+                else
+                {
+                    document.getElementsByName('multiList_div1')[cnt].style.pointerEvents = 'auto';
+                }
+            }
+        }
+    }
+}
+else
+{
+    setFieldDisabledInput(regulatoryAssessment);
+    setFieldDisabledTextArea(regulatoryAssessmentTA);
+
+    if(divCnt1 > 0)
+    {
+    	for(let cnt = 0;cnt < divCnt1; cnt++)
+    	{
+    		document.getElementsByName('multiList_div1')[cnt].style.pointerEvents = 'none';
+    	}
+    }
+}
+
+
+if(((itemTypeID === undefined || (lifecycleStatus == 'Regulatory and Tox Assessment') || (lifecycleStatus == 'Final Review')) && loggedUserIdenlst.includes(productToxicologicalAssessment)) || (loggedUserIdenlst.includes(businessAdminDevelopment)))
+{
+    setFieldEnabledInput(toxicologicalAssessment);
+    setFieldEnabledTextArea(toxicologicalAssessmentTA);
+ 
+    if(!document.thisItem.getProperty('locked_by_id') && document.thisItem.getProperty('id') != undefined)
+    {
+         if(divCnt2 > 0)
+         {
+        	for(let cnt = 0;cnt < divCnt2; cnt++)
+        	{
+        		document.getElementsByName('multiList_div2')[cnt].style.pointerEvents = 'none';
+        	}
+         } 
+    }
+    else
+    {
+         if(divCnt2>0)
+    {
+        for(let cnt=0;cnt<divCnt2;cnt++)
+        {
+            const type =document.thisItem.getType();
+            if(type =="Activity2")
+            {
+            document.getElementsByName('multiList_div2')[cnt].style.pointerEvents = 'none';
+            }
+            else
+            {
+                document.getElementsByName('multiList_div2')[cnt].style.pointerEvents = 'auto';
+            }
+        }
+    }
+    }
+}
+else
+{
+    setFieldDisabledInput(toxicologicalAssessment);
+    setFieldDisabledTextArea(toxicologicalAssessmentTA);
+
+    if(divCnt2 > 0)
+    {
+    	for(let cnt = 0;cnt < divCnt2; cnt++)
+    	{
+    		document.getElementsByName('multiList_div2')[cnt].style.pointerEvents = 'none';
+    	}
+    }
+}]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_rctaDisableField</name>
+ </Item>
+</AML>

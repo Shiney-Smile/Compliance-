@@ -1,0 +1,28 @@
+﻿<AML>
+ <Item type="Method" id="1E15815FDB6A45B9B60347438EE1A3B0" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[let thisItem = document.thisItem;
+const typeOfPanel = thisItem.getProperty("pmi_type_of_panel");
+const mantypeOfExtPanel = getFieldByName("mandatory_typeOfExtPanel");
+const extConsumersOther = getFieldByName("mandatory_extConsumersOther");
+const martkes = getFieldByName("mandatory_martkes");
+const typeOfExtPanel = getFieldByName("pmi_type_external_panel");
+
+if(typeOfPanel === "External Panel")
+{
+    mantypeOfExtPanel.style.visibility = 'visible';
+    extConsumersOther.style.visibility = 'visible';
+    martkes.style.visibility = 'visible';
+    typeOfExtPanel.style.visibility = 'visible';
+}
+else if(typeOfPanel === "internal (SEC - Lausanne)" || typeOfPanel === "Internal Panel (PMI employees within PMI premises)")
+{
+    mantypeOfExtPanel.style.visibility = 'hidden';
+    extConsumersOther.style.visibility = 'hidden';
+    martkes.style.visibility = 'hidden';
+    typeOfExtPanel.style.visibility = 'hidden';
+}]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_hideShow_TypeOfPanel_Prop</name>
+ </Item>
+</AML>
