@@ -1,0 +1,54 @@
+document.countTabItems = function() {
+    const tabNames = [];
+    const tabLabels = [];
+    const tabIds = parent.relationships.relTabbar.getTabOrder().split(',');
+    if(parent.thisItem.getType() === 'pmi_Testing_Order') {
+        tabIds.shift();
+    }
+    if(parent.thisItem.getType() === 'pmi_DCEAction' || parent.thisItem.getType() === 'Activity2'){
+        for (let counter = 0; counter < tabIds.length; ) {
+        const relshipTypeNd = aras.getRelationshipType(tabIds[counter]);
+        if (!relshipTypeNd?.node || !top.aras.getItemProperty(relshipTypeNd.node, 'name')) {
+            tabIds.splice(counter, 1); // remove invalid tabId
+            continue; // do not increment counter
+        }
+
+        tabNames.push(top.aras.getItemProperty(relshipTypeNd.node, 'name'));
+        tabLabels.push(aras.getItemProperty(relshipTypeNd.node, 'label'));
+        counter++; // increment only for valid entries
+        }
+    }else{
+    for (let counter = 0; counter < tabIds.length; counter++) {
+        const relshipTypeNd = aras.getRelationshipType(tabIds[counter]);
+        tabNames.push(top.aras.getItemProperty(relshipTypeNd.node, 'name'));
+        tabLabels.push(aras.getItemProperty(relshipTypeNd.node, 'label'));
+    }
+    }
+    let callMethod = aras.newIOMItem('Method', 'pmi_GetTabCountServer');
+    callMethod.setProperty('relshipNames', tabNames.join('|'));
+    callMethod.setID(document.thisItem.getID());
+    callMethod = callMethod.apply();
+    if (callMethod.isError()) {
+        return;
+    }
+    const tabsItemCount = callMethod.getItemByIndex(0).getProperty("result").split('|');
+    for (let index = 0; index < tabIds.length; index++) {
+        const tabItem = parent.document.querySelector("li[data-id='" + tabIds[index] + "']");
+        if(!tabItem) {
+            continue;
+        }
+        if (tabsItemCount[index] === '0') {
+            tabItem.innerText = tabLabels[index];
+            continue;
+        }
+        tabItem.innerText = tabLabels[index] + " (" + tabsItemCount[index] + ")";
+    }
+    return;
+};
+const interval = setInterval(checkTab, 50);
+function checkTab() {
+    if (parent.relationships.relTabbar !== null) {
+        clearInterval(interval);
+        document.countTabItems();
+    }
+}
