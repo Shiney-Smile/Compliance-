@@ -1,0 +1,59 @@
+﻿<AML>
+ <Item type="SQL" id="01B5D44B2B7A4370977C71C2716CB3A8" action="add">
+  <execution_flag>immediate</execution_flag>
+  <old_name>pmi_ComplianceMarketPMCheck</old_name>
+  <sqlserver_body><![CDATA[CREATE PROCEDURE [pmi_ComplianceMarketPMCheck]
+(
+    @PartId varchar(max)= NULL
+)
+AS
+BEGIN
+
+    SET NOCOUNT ON;
+
+  IF OBJECT_ID('tempdb..#ComplianceValidationTable') IS NOT NULL
+    BEGIN
+        drop TABLE #ComplianceValidationTable
+    END
+  Declare @ItemType varchar(max)=null;
+  Declare @SubFamily varchar(max)=null;
+  Declare @ProductCategory varchar(max)=null;
+  Declare @MarketCount int=null;
+  CREATE TABLE #ComplianceValidationTable(Validation_Msg VARCHAR(MAX))
+
+  select @ItemType=CLASSIFICATION, @SubFamily=PMI_SUB_FAMILIES from innovator.PART WITH(NOLOCK)
+  where id=@PartId
+  Select @ProductCategory=pm.pmi_product_category from innovator.pmi_ProductCategoryMapping pm WITH(NOLOCK)
+  where pm.pmi_item_type=@ItemType and pm.pmi_sub_family=@SubFamily
+  if(ISNULL(@ProductCategory,'') = '') 
+     begin
+          insert into #ComplianceValidationTable values ('Product Category not found in Mapping Table');
+	 end
+
+  -- Market Validation
+  select  @MarketCount=count(mt.PMI_ID)
+  from innovator.pmi_ProductVariant pv WITH(NOLOCK)
+  join innovator.PMI_PRODUCTVARIANT_MARKET ma WITH(NOLOCK) on pv.id=ma.SOURCE_ID
+  join innovator.PMI_MARKET mt WITH(NOLOCK)  on mt.id = ma.RELATED_ID
+  where pv.id in (select AA.SOURCE_ID from 
+(select Source_ID,PMI_PARAMETER_STRUCT_NUMBER,PMI_PARAMETER_NUMBER, value from innovator.PMI_PVGHPCONTAINERS Container CROSS APPLY string_split(Container.PMI_PARAMETER_VALUE,CASE WHEN CHARINDEX(',', Container.PMI_PARAMETER_VALUE) > 0 THEN N',' 
+WHEN CHARINDEX(';', Container.PMI_PARAMETER_VALUE) > 0 THEN N';' ELSE N',' END) where value <>'')AA
+  join innovator.PMI_PARAMETERSTRUCTURE ps on ps.id = AA.PMI_PARAMETER_STRUCT_NUMBER
+  join innovator.PMI_GLOBALHARMONIZEDPARAMETERS ghp on ghp.id = AA.PMI_PARAMETER_NUMBER
+  where trim(AA.Value) = (select keyed_name from innovator.part where id=@PartId) and ps.is_current='1'
+  and ps.PMI_DESCRIPTION='Combustible') and
+  ma.PMI_STATUS in ('A-Active', 'F-Forecast', 'P-Planned') 
+  and pv.STATE in ('In Review', 'Released', 'Planning', 'Obsolete', 'Preliminary')
+  if(@MarketCount = 0)
+    begin
+          insert into #ComplianceValidationTable values ('Markets not found');
+	 end
+	 select * from #ComplianceValidationTable
+END
+]]></sqlserver_body>
+  <stale>0</stale>
+  <transform_first>0</transform_first>
+  <type>procedure</type>
+  <name>pmi_ComplianceMarketPMCheck</name>
+ </Item>
+</AML>

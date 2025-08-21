@@ -1,0 +1,252 @@
+﻿<AML>
+ <Item type="SQL" id="B55781FDC8CC454CA7752B82E99321CA" action="add">
+  <execution_flag>immediate</execution_flag>
+  <old_name>pmi_PCO_Final_ComplianceInputCheck</old_name>
+  <sqlserver_body><![CDATA[CREATE PROCEDURE [pmi_PCO_Final_ComplianceInputCheck]
+(
+    @PartId varchar(max)= null,
+	@ContainerId varchar(max)=null
+)
+AS
+BEGIN
+
+    SET NOCOUNT ON;
+
+IF OBJECT_ID('tempdb..#tempTable') IS NOT NULL
+    BEGIN
+        drop TABLE #tempTable
+    END
+IF OBJECT_ID('tempdb..#ProductionCenterData') IS NOT NULL
+    BEGIN
+        drop TABLE #ProductionCenterData
+    END
+IF OBJECT_ID('tempdb..#MarketAssignData') IS NOT NULL
+    BEGIN
+        drop TABLE #MarketAssignData
+    END
+IF OBJECT_ID('tempdb..#ComplianceOutputTable2') IS NOT NULL
+    BEGIN
+        drop TABLE #ComplianceOutputTable2
+    END
+IF OBJECT_ID('tempdb..#TempBOM') IS NOT NULL
+    BEGIN
+        drop TABLE #TempBOM   
+    END
+IF OBJECT_ID('tempdb..#ComplianceOutputTable') IS NOT NULL
+    BEGIN
+        drop TABLE #ComplianceOutputTable
+    END
+
+	CREATE TABLE #TempBOM (
+    source_id VARCHAR(MAX),
+    RELATED_ID VARCHAR(MAX),
+    KEYED_NAME NVARCHAR(255),
+	SOURCE_KEYEDNAME VARCHAR(MAX),
+	SOURCE_CLASSIFICATION VARCHAR(MAX),
+	RELATED_CLASSIFICATION VARCHAR(MAX),
+	SOURCE_SUBFAMILY VARCHAR(MAX),
+	RELATED_SUBFAMILY VARCHAR(MAX),
+    indent_level INT,
+	PROCESSED INT
+);
+
+DECLARE @ReplicatedId varchar(max); 
+
+select @ReplicatedId= id from innovator.pmi_TreeGridBOMDataModel where pmi_item_code=@PartId and pmi_container=@ContainerId and pmi_type='PART';
+
+WITH RECURSIVE_RELS AS (
+    SELECT 
+		DM.ID,
+        TG.RELATED_ID, 
+        TG.SOURCE_ID, 
+		(SELECT TM.PMI_ITEM_CODE FROM innovator.PMI_TREEGRIDBOMDATAMODEL TM WHERE TM.ID=TG.SOURCE_ID) AS SOURCE_ITEM_CODE,
+		(SELECT TM.PMI_ITEM_TYPE FROM innovator.PMI_TREEGRIDBOMDATAMODEL TM WHERE TM.ID=TG.SOURCE_ID) AS SOURCE_CLASSIFICATION,	
+		(SELECT TM.PMI_SUB_FAMILIES FROM innovator.PMI_TREEGRIDBOMDATAMODEL TM WHERE TM.ID=TG.SOURCE_ID) AS SOURCE_SUBFAMILY,
+        1 AS INDENT_LEVEL, 
+        DM.PMI_TYPE, 
+        DM.KEYED_NAME,
+        DM.PMI_ITEM_CODE,
+		DM.PMI_ITEM_TYPE AS RELATED_CLASSIFICATION,
+		DM.PMI_SUB_FAMILIES AS RELATED_SUBFAMILY,
+		DM.PMI_GHP_CODE,
+        DM.PMI_MD_CODE,
+        DM.PMI_SUB_CODE,
+        CAST((SELECT TM.KEYED_NAME FROM innovator.PMI_TREEGRIDBOMDATAMODEL TM WHERE TM.ID=TG.SOURCE_ID) AS NVARCHAR(255)) AS PARENT_NAME
+    FROM 
+        innovator.PMI_TREEGRIDRELSSTRUCTURE TG 
+    JOIN 
+        innovator.PMI_TREEGRIDBOMDATAMODEL DM 
+    ON 
+        DM.ID = TG.RELATED_ID
+    WHERE 
+        TG.SOURCE_ID = @ReplicatedId --@pmi_tgridrelstructure_id
+    UNION ALL
+    SELECT 
+		DM.ID,
+        T.RELATED_ID, 
+        T.SOURCE_ID, 
+		(SELECT TM.PMI_ITEM_CODE FROM innovator.PMI_TREEGRIDBOMDATAMODEL TM WHERE TM.ID=T.SOURCE_ID) AS SOURCE_ITEM_CODE,
+		(SELECT TM.PMI_ITEM_TYPE FROM innovator.PMI_TREEGRIDBOMDATAMODEL TM WHERE TM.ID=T.SOURCE_ID) AS SOURCE_CLASSIFICATION,	
+		(SELECT TM.PMI_SUB_FAMILIES FROM innovator.PMI_TREEGRIDBOMDATAMODEL TM WHERE TM.ID=T.SOURCE_ID) AS SOURCE_SUBFAMILY,
+        RB.INDENT_LEVEL + 1, 
+        DM.PMI_TYPE, 
+        DM.KEYED_NAME,
+		DM.PMI_ITEM_CODE,
+		DM.PMI_ITEM_TYPE AS RELATED_CLASSIFICATION,
+		DM.PMI_SUB_FAMILIES AS RELATED_SUBFAMILY,
+        DM.PMI_GHP_CODE,
+        DM.PMI_MD_CODE,
+        DM.PMI_SUB_CODE,
+        CAST(RB.KEYED_NAME AS NVARCHAR(255)) AS PARENT_NAME
+    FROM 
+        innovator.PMI_TREEGRIDRELSSTRUCTURE T
+    INNER JOIN 
+        RECURSIVE_RELS RB 
+    ON 
+        RB.RELATED_ID = T.SOURCE_ID    
+    JOIN 
+        innovator.PMI_TREEGRIDBOMDATAMODEL DM 
+    ON 
+        DM.ID = T.RELATED_ID
+)
+
+insert INTO #TempBOM (source_id, RELATED_ID, KEYED_NAME, SOURCE_KEYEDNAME, SOURCE_CLASSIFICATION,RELATED_CLASSIFICATION,SOURCE_SUBFAMILY,RELATED_SUBFAMILY, indent_level)
+select SOURCE_ITEM_CODE,PMI_ITEM_CODE,KEYED_NAME,PARENT_NAME,SOURCE_CLASSIFICATION,RELATED_CLASSIFICATION,SOURCE_SUBFAMILY,RELATED_SUBFAMILY,INDENT_LEVEL from RECURSIVE_RELS order by INDENT_LEVEL
+
+CREATE TABLE #tempTable(source_id VARCHAR(MAX),
+    RELATED_ID VARCHAR(MAX),
+    KEYED_NAME NVARCHAR(255),
+	SOURCE_KEYEDNAME VARCHAR(MAX),
+	SOURCE_CLASSIFICATION VARCHAR(MAX),
+	RELATED_CLASSIFICATION VARCHAR(MAX),
+	SOURCE_SUBFAMILY VARCHAR(MAX),
+	RELATED_SUBFAMILY VARCHAR(MAX),
+    indent_level INT,
+	Compliance_Status VARCHAR(MAX) DEFAULT 'COMPLIANT',
+	Error_Msg VARCHAR(MAX),
+	Child_ComplianceStatus VARCHAR(MAX) DEFAULT 'COMPLIANT')
+INSERT INTO #tempTable(source_id, RELATED_ID, KEYED_NAME,SOURCE_KEYEDNAME, SOURCE_CLASSIFICATION, RELATED_CLASSIFICATION, SOURCE_SUBFAMILY, RELATED_SUBFAMILY, indent_level) 
+SELECT source_id, RELATED_ID, KEYED_NAME,SOURCE_KEYEDNAME, SOURCE_CLASSIFICATION, RELATED_CLASSIFICATION, SOURCE_SUBFAMILY, RELATED_SUBFAMILY, indent_level FROM #TempBOM order by indent_level asc; 
+ 
+  Declare @ItemType varchar(max)=null;
+  Declare @SubFamily varchar(max)=null;
+  Declare @ProductCategory varchar(max)=null;
+  Declare @ComplianceRegion varchar(max)=null;
+  Declare @ComplainceCountry varchar(max)=null;
+  CREATE TABLE #ProductionCenterData(pmi_text_value VARCHAR(MAX),PMI_DESCRIPTION VARCHAR(MAX));
+  CREATE TABLE #MarketAssignData(pmi_text_value VARCHAR(MAX),PMI_DESCRIPTION VARCHAR(MAX));
+  CREATE TABLE #ComplianceOutputTable(Keyed_Name VARCHAR(MAX),Related_Id VARCHAR(MAX),Compliance_status VARCHAR(MAX),ErrorMsg VARCHAR(MAX));
+ 
+ select @ItemType=CLASSIFICATION, @SubFamily=PMI_SUB_FAMILIES from innovator.PART WITH(NOLOCK)
+  where id=@PartId
+  Select @ProductCategory=pm.pmi_product_category from innovator.pmi_ProductCategoryMapping pm WITH(NOLOCK)
+  where pm.pmi_item_type=@ItemType and pm.pmi_sub_family=@SubFamily
+
+  insert into #ProductionCenterData
+  SELECT r.pmi_text_value, ri.PMI_DESCRIPTION
+  FROM innovator.pmi_ProductionCenter_Parameter r
+  JOIN innovator.pmi_ProductionCenter si ON r.source_id = si.id
+  JOIN innovator.PMI_GLOBALHARMONIZEDPARAMETERS ri ON r.related_id = ri.id
+  WHERE si.pmi_pc_code = (SELECT r.pmi_text_value
+  FROM innovator.PMI_PARAMETERS r
+  JOIN innovator.PMI_GLOBALHARMONIZEDPARAMETERS ri ON r.related_id = ri.id
+  WHERE r.source_id = @PartId AND ri.pmi_description = 'Production Center') AND ri.pmi_description in ('Compliance Production Center Country', 'Compliance Production Center Region');
+
+  insert into #MarketAssignData
+  SELECT distinct r.pmi_text_value, ri.PMI_DESCRIPTION
+  FROM innovator.pmi_Markets_Parameter r
+  JOIN innovator.pmi_Market si ON r.source_id = si.id
+  JOIN innovator.PMI_GLOBALHARMONIZEDPARAMETERS ri ON r.related_id = ri.id
+  WHERE si.pmi_id in (select  mt.PMI_ID
+  from innovator.pmi_ProductVariant pv WITH(NOLOCK)
+  join innovator.PMI_PRODUCTVARIANT_MARKET ma WITH(NOLOCK) on pv.id=ma.SOURCE_ID
+  join innovator.PMI_MARKET mt WITH(NOLOCK)  on mt.id = ma.RELATED_ID
+  where pv.id in (select AA.SOURCE_ID from 
+(select Source_ID,PMI_PARAMETER_STRUCT_NUMBER,PMI_PARAMETER_NUMBER, value from innovator.PMI_PVGHPCONTAINERS Container CROSS APPLY string_split(Container.PMI_PARAMETER_VALUE,CASE WHEN CHARINDEX(',', Container.PMI_PARAMETER_VALUE) > 0 THEN N',' 
+WHEN CHARINDEX(';', Container.PMI_PARAMETER_VALUE) > 0 THEN N';' ELSE N',' END) where value <>'')AA
+ join innovator.PMI_PARAMETERSTRUCTURE ps on ps.id = AA.PMI_PARAMETER_STRUCT_NUMBER
+ join innovator.PMI_GLOBALHARMONIZEDPARAMETERS ghp on ghp.id = AA.PMI_PARAMETER_NUMBER
+where trim(AA.Value) = (select keyed_name from innovator.part where id=@PartId) and ps.is_current='1'
+and ps.PMI_DESCRIPTION='Combustible') and
+  ma.PMI_STATUS in ('A-Active', 'F-Forecast', 'P-Planned') 
+  and pv.STATE in ('In Review', 'Released', 'Planning', 'Obsolete', 'Preliminary')) AND ri.pmi_description in ('Compliance Market Country', 'Compliance Market Region');
+
+  SELECT @ComplainceCountry=PMI_TEXT_VALUE FROM #ProductionCenterData WHERE PMI_DESCRIPTION = 'Compliance Production Center Country'
+  SELECT @ComplianceRegion=PMI_TEXT_VALUE FROM #ProductionCenterData WHERE PMI_DESCRIPTION = 'Compliance Production Center Region'  
+
+  CREATE TABLE #ComplianceOutputTable2(SOURCE_ID VARCHAR(MAX),RELATED_ID VARCHAR(MAX),KEYED_NAME VARCHAR(MAX),SOURCE_KEYEDNAME VARCHAR(MAX),SOURCE_CLASSIFICATION VARCHAR(MAX),RELATED_CLASSIFICATION VARCHAR(MAX),SOURCE_SUBFAMILY VARCHAR(MAX),RELATED_SUBFAMILY VARCHAR(MAX),INDENT_LEVEL VARCHAR(MAX),PMI_PRODUCTCATEGORY VARCHAR(MAX),PMI_RESTRICTEDON VARCHAR(MAX),PMI_RESTRICTION_TYPE VARCHAR(MAX),PMI_MARKETS VARCHAR(MAX),PMI_REGION VARCHAR(MAX),ComplianceStatus VARCHAR(MAX),ErrorMsg VARCHAR(MAX));
+  insert into #ComplianceOutputTable2 (SOURCE_ID,RELATED_ID,KEYED_NAME,SOURCE_KEYEDNAME,SOURCE_CLASSIFICATION,RELATED_CLASSIFICATION,SOURCE_SUBFAMILY,RELATED_SUBFAMILY,INDENT_LEVEL,PMI_PRODUCTCATEGORY,PMI_RESTRICTEDON,PMI_RESTRICTION_TYPE,PMI_MARKETS,PMI_REGION)
+  select distinct T.source_id,C.SOURCE_ID,T.KEYED_NAME,T.SOURCE_KEYEDNAME,T.SOURCE_CLASSIFICATION,T.RELATED_CLASSIFICATION,T.SOURCE_SUBFAMILY,T.RELATED_SUBFAMILY,T.indent_level,C.PMI_PRODUCTCATEGORY,C.PMI_RESTRICTEDON,C.PMI_RESTRICTION_TYPE,C.PMI_MARKETS,C.PMI_REGION from #tempTable T
+  join innovator.PMI_COMPLIANCEINPUT C on (T.RELATED_ID = C.SOURCE_ID) 
+
+  UPDATE #ComplianceOutputTable2 SET ComplianceStatus = CASE WHEN CHARINDEX(@ComplainceCountry,PMI_MARKETS) > 0 OR  
+  CHARINDEX(@ComplianceRegion,PMI_REGION) > 0 THEN 'NOT COMPLIANT' ELSE 'COMPLIANT' END,
+  ErrorMsg =CASE WHEN CHARINDEX(@ComplainceCountry,PMI_MARKETS) > 0 OR  
+  CHARINDEX(@ComplianceRegion,PMI_REGION) > 0 THEN CONCAT(KEYED_NAME,': Production Limitations Not Matching') ELSE NULL END
+  FROM #ComplianceOutputTable2 WHERE TRIM(PMI_RESTRICTEDON) = 'Country of Production Limitations' AND TRIM(PMI_RESTRICTION_TYPE) = 'Not For' AND CHARINDEX(@ProductCategory,PMI_PRODUCTCATEGORY) > 0  
+
+  UPDATE #ComplianceOutputTable2 SET ComplianceStatus = CASE WHEN CHARINDEX (@ComplainceCountry,PMI_MARKETS) > 0 OR 
+  CHARINDEX(@ComplianceRegion,PMI_REGION) > 0 THEN 'COMPLIANT' ELSE 'NOT COMPLIANT' END,
+  ErrorMsg = CASE WHEN CHARINDEX (@ComplainceCountry,PMI_MARKETS) = 0 OR 
+  CHARINDEX(@ComplianceRegion,PMI_REGION) > 0 THEN CONCAT(KEYED_NAME,': Production Limitations Not Matching') ELSE NULL END
+  FROM #ComplianceOutputTable2 WHERE TRIM(PMI_RESTRICTEDON) = 'Country of Production Limitations' AND TRIM(PMI_RESTRICTION_TYPE) = 'Only For' AND CHARINDEX(@ProductCategory,PMI_PRODUCTCATEGORY) > 0
+
+  --OTHER LIMITATIONS CHECK
+  UPDATE #ComplianceOutputTable2 SET ComplianceStatus = 'OTHER LIMITATIONS'
+  FROM #ComplianceOutputTable2 WHERE TRIM(PMI_RESTRICTEDON) = 'Compliance Other Limitations' AND TRIM(PMI_RESTRICTION_TYPE) = 'Other Limitation'
+
+  DECLARE @TextValue VARCHAR(MAX);
+  DECLARE @Description VARCHAR(MAX);
+  DECLARE @CompCountry VARCHAR(MAX);
+  DECLARE @CompRegion VARCHAR(MAX);
+  DECLARE  C_COUNTRY CURSOR FOR
+  SELECT pmi_text_value,PMI_DESCRIPTION FROM #MarketAssignData 
+  OPEN C_COUNTRY;
+	FETCH NEXT FROM C_COUNTRY INTO 
+		@TextValue,@Description
+	WHILE @@FETCH_STATUS = 0
+		BEGIN	
+
+		set @CompCountry = case when @Description='Compliance Market Country' then @TextValue end;
+		set @CompRegion = case when @Description='Compliance Market Region' then @TextValue end;
+		
+		IF(@CompCountry IS NOT NULL)
+		BEGIN
+		UPDATE #ComplianceOutputTable2 SET ComplianceStatus = CASE WHEN TRIM(PMI_MARKETS) like CONCAT('%', @CompCountry ,'%') THEN 'NOT COMPLIANT' ELSE 'COMPLIANT' END
+		,ErrorMsg = CASE WHEN TRIM(PMI_MARKETS) like CONCAT('%', @CompCountry ,'%') THEN CONCAT(KEYED_NAME,' : Sale Limitations not matching for Not For country') ELSE NULL END
+		FROM #ComplianceOutputTable2  WHERE TRIM(PMI_RESTRICTEDON) = 'Country of Sale Limitations' AND TRIM(PMI_RESTRICTION_TYPE) = 'Not For' AND CHARINDEX(@ProductCategory,PMI_PRODUCTCATEGORY) > 0 and (UPPER(ComplianceStatus) = 'COMPLIANT' or ComplianceStatus is null)
+		and PMI_MARKETS IS NOT NULL
+		
+		UPDATE #ComplianceOutputTable2 SET ComplianceStatus = CASE WHEN TRIM(PMI_MARKETS) like CONCAT('%', @CompCountry ,'%') THEN 'COMPLIANT' ELSE 'NOT COMPLIANT' END
+		,ErrorMsg = CASE WHEN TRIM(PMI_MARKETS) not like CONCAT('%', @CompCountry ,'%') THEN CONCAT(KEYED_NAME,' : Sale Limitations not matching for Only For country') ELSE NULL END
+		FROM #ComplianceOutputTable2  WHERE TRIM(PMI_RESTRICTEDON) = 'Country of Sale Limitations' AND TRIM(PMI_RESTRICTION_TYPE) = 'Only For' AND CHARINDEX(@ProductCategory,PMI_PRODUCTCATEGORY) > 0 and (UPPER(ComplianceStatus) = 'COMPLIANT' or ComplianceStatus is null)
+		and PMI_MARKETS IS NOT NULL
+		END
+
+		IF(@CompRegion IS NOT NULL)
+		BEGIN
+		UPDATE #ComplianceOutputTable2 SET ComplianceStatus = CASE WHEN TRIM(PMI_REGION) like CONCAT('%', TRIM(SUBSTRING(@CompRegion, CHARINDEX('-', @CompRegion) + 1, LEN(@CompRegion))) ,'%') THEN 'NOT COMPLIANT' ELSE 'COMPLIANT' END
+		,ErrorMsg = CASE WHEN TRIM(PMI_REGION) like CONCAT('%', TRIM(SUBSTRING(@CompRegion, CHARINDEX('-', @CompRegion) + 1, LEN(@CompRegion))) ,'%') THEN CONCAT(KEYED_NAME,' : Sale Limitations not matching for Not For region') ELSE NULL END
+		FROM #ComplianceOutputTable2  WHERE TRIM(PMI_RESTRICTEDON) = 'Country of Sale Limitations' AND TRIM(PMI_RESTRICTION_TYPE) = 'Not For' AND CHARINDEX(@ProductCategory,PMI_PRODUCTCATEGORY) > 0 and (UPPER(ComplianceStatus) = 'COMPLIANT' or ComplianceStatus is null)
+		and PMI_REGION IS NOT NULL
+
+		UPDATE #ComplianceOutputTable2 SET ComplianceStatus = CASE WHEN TRIM(PMI_REGION) like CONCAT('%', TRIM(SUBSTRING(@CompRegion, CHARINDEX('-', @CompRegion) + 1, LEN(@CompRegion))) ,'%') THEN 'COMPLIANT' ELSE 'NOT COMPLIANT' END
+		,ErrorMsg = CASE WHEN TRIM(PMI_REGION) not like CONCAT('%', TRIM(SUBSTRING(@CompRegion, CHARINDEX('-', @CompRegion) + 1, LEN(@CompRegion))) ,'%') THEN CONCAT(KEYED_NAME,' : Sale Limitations not matching for Only For region') ELSE NULL END
+		FROM #ComplianceOutputTable2  WHERE TRIM(PMI_RESTRICTEDON) = 'Country of Sale Limitations' AND TRIM(PMI_RESTRICTION_TYPE) = 'Only For' AND CHARINDEX(@ProductCategory,PMI_PRODUCTCATEGORY) > 0 and (UPPER(ComplianceStatus) = 'NOT COMPLIANT' or ComplianceStatus is null)
+		and PMI_REGION IS NOT NULL
+		END
+
+		FETCH NEXT FROM C_COUNTRY INTO 
+		@TextValue,@Description
+		end
+		CLOSE C_COUNTRY;
+	DEALLOCATE C_COUNTRY;
+
+   select distinct KEYED_NAME,ErrorMsg 'errormsg' from #ComplianceOutputTable2 where ComplianceStatus='NOT COMPLIANT'
+END]]></sqlserver_body>
+  <stale>0</stale>
+  <transform_first>0</transform_first>
+  <type>procedure</type>
+  <name>pmi_PCO_Final_ComplianceInputCheck</name>
+ </Item>
+</AML>

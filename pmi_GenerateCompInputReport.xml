@@ -1,0 +1,97 @@
+﻿<AML>
+ <Item type="Method" id="0AB28850AB674CF7B4C6B158245EAEA1" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[// User Story  - CLIPP-24969 Combustible Compliance Input Summary report generation
+// Description - This Method used to Generate Compliance Input Summary Report.
+//*********************************************************************************************************************************
+
+
+Innovator innovator = this.getInnovator();
+
+Aras.Server.Security.Identity plmIdentity = Aras.Server.Security.Identity.GetByName("Super User");
+IDisposable elevatePermission = CCO.Permissions.GrantIdentity(plmIdentity);
+Innovator inn = this.getInnovator();
+XmlDocument xml = CCO.Cache.GetCacheInfo("ApplicationXML");
+string reportServerURL = xml.SelectSingleNode("//ReportingServices/ReportServer").InnerText;
+string reportUserDomain = xml.SelectSingleNode("//ReportingServices/Domain").InnerText;
+string reportUser = xml.SelectSingleNode("//ReportingServices/User").InnerText;
+Item itm = innovator.applyMethod("pmi_GetSSRSReportDetails","");
+string md5 ="";
+if(!itm.isError())
+{
+    md5 = itm.getProperty("ssrs_pwd","");
+}
+Item getVariable= innovator.newItem("Variable", "get");
+getVariable.setProperty("name", "Report Server Folder");
+getVariable.setAttribute("select", "value");
+getVariable = getVariable.apply();
+if(getVariable.isError())
+{
+    return innovator.newError("Error in getting variable for Compliance Input Report");
+}
+string securedPW = AesOperation.DecryptString(md5); //xml.SelectSingleNode("//ReportingServices/Password").InnerText;
+string subfolder = getVariable.getProperty("value", "");
+string report = "pmi_ComplianceSummary";
+string command = "Render";
+string format = "ExcelOpenXML";
+string fileExtension = "xlsx";
+
+string fileName = "ComplianceInputSummary";
+string containerCode = this.getProperty("containerName",string.Empty);
+string revision = this.getProperty("revision",string.Empty);
+string PartId = this.getProperty("id", string.Empty);
+string ContainerId = this.getProperty("pmi_container",string.Empty);
+
+string timeStamp = DateTime.Now.ToString("yyyy-MMM-ddTHH-mm-ss", System.Globalization.DateTimeFormatInfo.InvariantInfo);
+string fileString = fileName+"_" +containerCode+"_"+revision+"_"+ timeStamp + "." + fileExtension;
+string tempDirectory = Path.Combine(CCO.ServerEnvironment.GetTempFolderPath(), Path.GetRandomFileName());
+Directory.CreateDirectory(tempDirectory);
+string path = Path.Combine(tempDirectory, fileString);
+string targetURL = reportServerURL + "?%2f" + subfolder + "%2f" + report + "&rs:Command=" + command + "&PartId=" + PartId + 
+    "&ContainerId=" + ContainerId + "&rs:Format=" + format;
+
+    System.Net.HttpWebRequest request = (HttpWebRequest) System.Net.WebRequest.Create(targetURL);
+    request.Credentials = new System.Net.NetworkCredential(reportUser, securedPW, reportUserDomain);
+    request.Method = "GET";
+    request.Timeout = -1;
+    System.Net.HttpWebResponse response = (HttpWebResponse) request.GetResponse();
+    if (response.StatusCode == HttpStatusCode.OK) 
+    {
+        System.IO.FileStream fs = new System.IO.FileStream(path, System.IO.FileMode.Create);
+        System.IO.Stream stream = response.GetResponseStream();
+        byte[] buffer = new byte[1024];
+        int length = stream.Read(buffer, 0, 1024);
+        while (length > 0) 
+        {
+            fs.Write(buffer, 0, length);
+            length = stream.Read(buffer, 0, 1024);
+        }
+        stream.Close();
+        fs.Close();
+    }
+    Item file = innovator.newItem("File", "add");
+    file.setProperty("filename", fileString);
+    file.attachPhysicalFile(path);
+    file = file.apply();
+    
+    if(file.isError())
+    {
+        return innovator.newError("Error in Creating File for Compliance Input Report");
+    }
+    Item addRecord = inn.newItem("pmi_BOMSimReportAttachment", "add");
+    addRecord.setProperty("source_id", ContainerId);
+    addRecord.setProperty("related_id", file.getID());
+    addRecord = addRecord.apply();
+    
+    if (addRecord.isError()) 
+    {
+        return innovator.newError("Error in Attaching File in Replicated BOM");
+    } 
+    Directory.Delete(tempDirectory, true);
+    elevatePermission ? .Dispose();
+
+return this;]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_GenerateCompInputReport</name>
+ </Item>
+</AML>

@@ -1,0 +1,92 @@
+﻿<AML>
+ <Item type="Method" id="12735CAA5B2044C893FF6771AF75AF70" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[Aras.Server.Security.Identity plmIdentity = Aras.Server.Security.Identity.GetByName("Super User");
+IDisposable elevatePermission = CCO.Permissions.GrantIdentity(plmIdentity);
+
+Innovator innovator = this.getInnovator();
+
+LogManager.Configuration = config;
+var mainLogger = NLog.LogManager.GetCurrentClassLogger();
+
+try
+{
+    string controlledItem = this.getProperty("keyed_name");
+	string controlledItemType = this.getProperty("type");
+	string error = this.getProperty("error");
+	string supportMail = CCO.Utilities.GetVarValue("pmi_ComplianceInput_SupportEmail", null);
+	Item EmailAssignee = SendEmailToAssignee(innovator, CCO, supportMail, controlledItem, controlledItemType, error);
+	if (EmailAssignee != null && EmailAssignee.isError())
+	{
+	    mainLogger.Error(EmailAssignee.getErrorString());
+		return EmailAssignee;
+	}
+}
+catch(Exception ex)
+{
+    throw new Exception(ex.Message);
+}
+finally
+{
+    elevatePermission?.Dispose();
+}
+return this;
+}
+
+private Item SendEmailToAssignee(Innovator innovator, Aras.Server.Core.CallContext CCO, string supportMail, string controlledItem, string controlledItemType, string error)
+{
+    Aras.Server.Core.CallContext myCallContext = CCO;
+	System.Net.Mail.MailMessage email = new System.Net.Mail.MailMessage();
+	string emailUrl = GetItemURL(innovator, CCO, controlledItem, controlledItemType);
+	string subject = string.Format(CultureInfo.InvariantCulture, @"Compliance check Update: {0}", controlledItem);
+	StringBuilder htmlContent = new StringBuilder();
+    htmlContent.Append("<BODY>");
+    htmlContent.Append("<p>Dear CLIPP User,</p>");
+    htmlContent.Append("<font>This is to inform you that encountering following error at the time of creating Replicated BOM Container for "+controlledItem+"<br/></font>");
+    htmlContent.Append("<font>Error: </font><font>"+error+"<br/></font>");
+    htmlContent.Append("<font>Click Here To: </font>");
+    htmlContent.Append("<a href='"+emailUrl+"'>Navigate to "+controlledItem+"</a><br/><br/></p>");
+    htmlContent.Append("<p><font>Thanks for your collaboration<br/></font>");
+    htmlContent.Append("<font>Your CLIPP Team</font><br/><br/></p>");
+    htmlContent.Append("<p style='color:red'>Note: This is a system generated email. PLEASE DO NOT REPLY.</p>");
+    htmlContent.Append("</BODY>");
+    email.To.Add(supportMail);
+    email.IsBodyHtml = true;
+    email.Subject = subject;
+    Item getVariable = innovator.newItem("Variable","get");
+	getVariable.setProperty("name", "pmi_EmailFromAddress");
+    getVariable.setAttribute("select","value,default_value");
+    getVariable = getVariable.apply();
+    if(getVariable.isEmpty() || getVariable.isError())
+    {
+        return innovator.newError("Variables defined for Email From address not found");
+    }
+    string fromEmailAddress = getVariable.getProperty("value");
+    string instanceName = getVariable.getProperty("default_value");
+    email.From = new System.Net.Mail.MailAddress(fromEmailAddress, instanceName);
+    email.Body = htmlContent.ToString();
+    email.BodyEncoding =  System.Text.Encoding.UTF8;
+    email.SubjectEncoding = System.Text.Encoding.UTF8;
+    try
+    {
+        myCallContext.Email.SetupSmtpMailServerAndSend(email);
+    }
+    catch(Exception ex)
+    {
+        throw new Exception(ex.Message);
+    }
+	return null;
+}
+
+private string GetItemURL(Innovator innovator, Aras.Server.Core.CallContext CCO, string itemId, string itemTypeName)
+{
+    string protocol = CCO.Context.Request.IsHttps ? "https" : "http";
+    string hostName = CCO.Context.Request.Host.Host;
+    string[] urlSegments = new Uri(CCO.Request.GetDisplayUrl()).Segments;
+    string dbName = urlSegments[1];
+    string itemURL = (protocol + "://" + hostName + "/" + dbName + "?StartItem=" + itemTypeName + ":"+itemId);
+    return itemURL;]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_TriggerEmailForCompliance</name>
+ </Item>
+</AML>

@@ -1,0 +1,115 @@
+﻿<AML>
+ <Item type="Method" id="77BFC118647C4E2880DFEA49D8E8F413" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[const revision = document.getElementsByName("pmi_revision")[1].value;
+if(revision === "" || revision === undefined)
+{
+    aras.AlertError("Please select Revision and click on Proceed button.");
+}
+
+const inn =  new Innovator();
+const partItem = window.parent.dialogArguments.itemNumber;
+const complianceCheckFlag = window.parent.dialogArguments.ComplianceCheck;
+
+let amlQuery = "<AML><Item action='get' type='Part' select='id,keyed_name,major_rev,classification' serverEvents='0' orderBy='generation DESC' maxRecords='1'><item_number>"+partItem+"</item_number><major_rev>"+revision+"</major_rev><generation condition='like'>*</generation></Item></AML>";
+let getPartItem = inn.applyAML(amlQuery);
+
+if(!getPartItem.isError() && !getPartItem.isEmpty() && getPartItem.getItemCount() > 0)
+{
+	let partCode = getPartItem.getProperty("keyed_name","");
+    let createTmpBOM = inn.newItem("pmi_ComplianceReplicaBOM","add");
+    createTmpBOM.setProperty("pmi_part_item_code",getPartItem.getProperty("id",""));
+	if(getPartItem.getProperty("classification","") === "Combustible - COM")
+	{
+	    createTmpBOM.setProperty("pmi_comp_checks",complianceCheckFlag === "No" ? 0 : 1);
+	}
+    let complianceBOM = inn.newItem("pmi_ComplianceReplicaBOM", "get");
+    complianceBOM.setPropertyCondition("pmi_seq_code","like");
+	complianceBOM.setProperty("pmi_seq_code",partCode+"*");
+	complianceBOM.setAttribute("select", "id");
+	complianceBOM.setAttribute("serverEvents", "0");
+	complianceBOM = complianceBOM.apply();
+	
+	const complianceBOMCount = complianceBOM.getItemCount();
+		
+	createTmpBOM.setProperty("pmi_seq_code",partCode+"-TMP"+(complianceBOMCount + 1));
+	createTmpBOM.setProperty("pmi_desc",partCode+"-TMP"+(complianceBOMCount + 1));
+		createTmpBOM.setProperty("pmi_sort_order", complianceBOMCount + 1);
+    createTmpBOM = createTmpBOM.apply();
+    
+    if(!createTmpBOM.isError() && !createTmpBOM.isEmpty() && createTmpBOM.getItemCount() > 0)
+    {
+        const res = inn.applyMethod("pmi_CreateTreeGridBOMDataModel", "<id>"+getPartItem.getProperty("id","")+"</id><pmi_container>"+createTmpBOM.getID()+"</pmi_container><pmi_parentPart></pmi_parentPart><pmi_flag>true</pmi_flag><pmi_PartID></pmi_PartID><pmi_GHP>false</pmi_GHP><complianceCheck>"+complianceCheckFlag+"</complianceCheck>");
+        if(res.isError())
+        {
+                return aras.AlertError("Error while creating Replicated Data Model" +res.getErrorString());
+            }
+
+        if((getPartItem.getProperty("classification", "") === "Combustible - COM") || (getPartItem.getProperty("classification", "") === "Consumable - COS"))
+        {
+          const generateReport = inn.applyMethod("pmi_GenerateCompInputReport", "<id>"+getPartItem.getProperty("id")+"</id><pmi_container>"+createTmpBOM.getID()+"</pmi_container><revision>"+getPartItem.getProperty("major_rev")+"</revision><containerName>"+createTmpBOM.getProperty("pmi_seq_code")+"</containerName>");
+            if (generateReport.isError())
+            {
+            	return aras.AlertError("Error while Compliance Input Summary Report generation on Replicated Data Model"+generateReport.getErrorString());
+            }
+        }
+        let getDataModel= inn.newItem("pmi_TreeGridBOMDataModel", "get");
+        getDataModel.setProperty("pmi_item_code", getPartItem.getProperty("id",""));
+        getDataModel.setProperty("pmi_type", "Part");
+        getDataModel.setProperty("pmi_container", createTmpBOM.getID());
+		getDataModel.setAttribute("select", "id");
+        getDataModel = getDataModel.apply();
+        if(!getDataModel.isError() && !getDataModel.isEmpty() && getDataModel.getItemCount() > 0)
+        {
+            let applyPreReplicaRules = inn.applyMethod("pmi_TriggerReplicaBOMCalculation", "<pmi_part_item_code>"+getPartItem.getProperty("id","")+"</pmi_part_item_code><containerId>"+getDataModel.getID()+"</containerId><preCalcFlag>1</preCalcFlag><pmi_container>"+createTmpBOM.getID()+"</pmi_container>");
+            if(applyPreReplicaRules.isError())
+            {
+                return aras.AlertError("Error while applying filtering rule on Replicated Data Model"+applyPreReplicaRules.getErrorString());
+            }
+        }
+		parent.args.dialog.close();
+		aras.AlertSuccess("Successfully created "+createTmpBOM.getProperty("pmi_seq_code","")+" Reporting BOM Container.");
+		
+		let optionArray = [];
+        //Get NTC Part ItemTypes
+        let listValues = inn.newItem("Value", "get");
+        listValues.setProperty("source_id", "9D7BD43C23A6441FA60B2FD71CCD11DB");
+        listValues.setAttribute("select", "value");
+        listValues = listValues.apply();
+        if(!listValues.isError())
+        {
+        	let countOfListValues = listValues.getItemCount();
+            for (let j = 0; j < countOfListValues; j++) 
+            {
+                const value = listValues.getItemByIndex(j).getProperty("value","");
+                optionArray.push(value);
+            }
+        }
+        
+        if(optionArray.includes(getPartItem.getProperty("classification", "")))
+        {
+            let updateFlag = inn.newItem("pmi_ComplianceReplicaBOM","edit");
+            updateFlag.setID(createTmpBOM.getID());
+            updateFlag.setProperty("pmi_trigger_calc_status","NA");
+            updateFlag.setProperty("doGetItem", "0");
+            updateFlag = updateFlag.apply();
+            if(updateFlag.isError())
+            {
+                return aras.AlertError("Error while updating Calculation Status Flag");
+            }
+        }
+        
+		//var resItem = aras.newIOMItem("");
+		//resItem.loadAML(createTmpBOM.node.xml);
+		//aras.uiShowItem(resItem.getType(),resItem.getID());
+		aras.uiShowItem("pmi_ComplianceReplicaBOM",createTmpBOM.getID());
+    }
+}
+else
+{
+    aras.AlertError("Released Part with Revision "+revision+" not found");
+}]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_TriggerReplicatedBOMCreation</name>
+ </Item>
+</AML>

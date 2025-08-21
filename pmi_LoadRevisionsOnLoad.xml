@@ -1,0 +1,28 @@
+﻿<AML>
+ <Item type="Method" id="17C843B94ECA4DE6A756297AFB4F43A1" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[let amlQuery = "<AML><Item action='get' type='Part' select='major_rev' serverEvents='0' orderBy='major_rev desc'><generation condition='ge'>0</generation><keyed_name>"+parent.args.itemNumber+"</keyed_name></Item></AML>";
+
+const applyAmlQuery = aras.IomInnovator.applyAML(amlQuery);
+
+if(applyAmlQuery.isError() || applyAmlQuery.isEmpty())
+{
+    aras.AlertError("Released Revisions for the "+parent.args.itemNumber+" not found. ");
+}
+const arrayOfRevisions = [];
+for(let i = 0; i < applyAmlQuery.getItemCount(); i++)
+{
+    if(!arrayOfRevisions.find(element => element.value.includes(applyAmlQuery.getItemByIndex(i).getProperty("major_rev",""))))
+    {
+        arrayOfRevisions.push({label: applyAmlQuery.getItemByIndex(i).getProperty("major_rev",""), value: applyAmlQuery.getItemByIndex(i).getProperty("major_rev","")});
+    }
+}
+const itemTypeDropdownComponent = getFieldComponentByName("pmi_revision");
+itemTypeDropdownComponent.component.setState({
+		list: arrayOfRevisions,
+		value: arrayOfRevisions
+	});]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_LoadRevisionsOnLoad</name>
+ </Item>
+</AML>

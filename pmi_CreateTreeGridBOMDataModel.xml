@@ -1,0 +1,735 @@
+﻿<AML>
+ <Item type="Method" id="66860788FAA641E2B31C4D5165AD0C3A" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[
+Innovator innovator = this.getInnovator();
+string newPartId = "";
+string complianceChecksToRun = this.getProperty("complianceCheck","");
+
+Item partClassification = innovator.newItem("Part","get");
+partClassification.setProperty("id",this.getProperty("id"));
+partClassification.setAttribute("serverEvents", "0");
+partClassification.setAttribute("select", "classification,id,type,keyed_name");
+partClassification = partClassification.apply();
+int partClassificationCount = partClassification.getItemCount();
+string emailMsg = "Error while sending email at the time of applying compliance status on Replicated Data Model";
+if(complianceChecksToRun != "No")
+{
+    if(!partClassification.isError() && !partClassification.isEmpty() && partClassificationCount > 0 && (partClassification.getProperty("classification", "") == "Combustible - COM"))
+    {
+        Item spResult = innovator.newItem("SQL", "SQL PROCESS");
+        spResult.setProperty("name", "pmi_ComplianceMarketPMCheck");
+        spResult.setProperty("PROCESS", "CALL");
+        spResult.setProperty("ARG1", this.getProperty("id"));
+        spResult = spResult.apply();
+        int spResultCount = spResult.getItemCount();
+        if (!spResult.isError() && !spResult.isEmpty() && spResultCount > 0)
+        {
+            List<string> errorList = new List<string>();
+            for (int index = 0; index < spResultCount; index++)
+            {
+                errorList.Add(spResult.getItemByIndex(index).getProperty("validation_msg", string.Empty));
+            }
+            string errorMsg = String.Join("\n", errorList.ToArray());
+            if (!string.IsNullOrEmpty(errorMsg))
+            {
+        		string methodcall = "<id>"+this.getProperty("id")+"</id><type>"+partClassification.getType()+"</type><keyed_name>"+partClassification.getProperty("keyed_name")+"</keyed_name><error>"+errorMsg+"</error>";
+        		Item triggerMail = innovator.applyMethod("pmi_TriggerEmailForCompliance", methodcall);
+        		if (triggerMail.isError())
+        		{
+        			throw new Exception(emailMsg+triggerMail.getErrorString());
+        		}
+        	}
+            return innovator.newError("Errors in Compliance Market PM Check "+errorMsg);                                  
+        }
+    }
+}
+Item getPartItemDetails = this.getProperty("pmi_PartID") == "" ? GetPartItem(this.getProperty("id")) : GetPartItem(this.getProperty("pmi_PartID"));
+
+List<Tuple<string,string>> hideParams = getHideComplianceBOMRules(getPartItemDetails);
+string uomVariable = CCO.Utilities.GetVarValue("pmi_UOMListID", null);
+if( string.IsNullOrEmpty(uomVariable))
+{
+    return innovator.newError("Unable to get UOMListId Variable. Please contact Administrator.");
+}
+string bomLevelVariable = CCO.Utilities.GetVarValue("pmi_FilteredBOMLevelList", null);
+if( string.IsNullOrEmpty(bomLevelVariable))
+{
+    return innovator.newError("Unable to get BOMLevelListId Variable. Please contact Administrator.");
+}
+string subFamilyListVariable = CCO.Utilities.GetVarValue("pmi_SubFamilyList_ID", null);
+if( string.IsNullOrEmpty(subFamilyListVariable))
+{
+    return innovator.newError("Unable to get BOMLevelListId Variable. Please contact Administrator.");
+}
+Dictionary<string,string> uomList = GetListRecords(uomVariable, "Value");
+Dictionary<string,string> bomLevels = GetListRecords(bomLevelVariable, "Filter_Value");
+Dictionary<string,string> subFamilyList = GetListRecords(subFamilyListVariable, "Value");
+
+Item dataModel = getMaterialAnalysisData(this.getProperty("id"), "Part", this.getProperty("pmi_container"), this.getProperty("pmi_parentPart"), bool.Parse(this.getProperty("pmi_flag")), this, this.getProperty("pmi_PartID"), hideParams, bool.Parse(this.getProperty("pmi_GHP")));
+if(!partClassification.isError() && !partClassification.isEmpty() && partClassificationCount > 0 && (partClassification.getProperty("classification", "") == "Combustible - COM"))
+{
+    if(complianceChecksToRun != "No")
+    {
+        Item spResult = innovator.newItem("SQL", "SQL PROCESS");
+        spResult.setProperty("name", "pmi_PCO_ComplianceInputCheck");
+        spResult.setProperty("PROCESS", "CALL");
+        spResult.setProperty("ARG1", this.getProperty("id"));
+        spResult.setProperty("ARG2", this.getProperty("pmi_container"));
+        spResult = spResult.apply();
+    
+        if (spResult.isError())
+        {
+			string methodcall = "<id>"+this.getProperty("id")+"</id><type>"+partClassification.getType()+"</type><keyed_name>"+partClassification.getProperty("keyed_name")+"</keyed_name><error>"+spResult.getErrorString()+"</error>";
+			Item triggerMail = innovator.applyMethod("pmi_TriggerEmailForCompliance", methodcall);
+			if (triggerMail.isError())
+			{
+				throw new Exception(emailMsg+triggerMail.getErrorString());
+			}
+	        	throw new Exception("Error while applying compliance status on Replicated Data Model"+spResult.getErrorString());
+	        }
+    }
+}
+if(!bool.Parse(this.getProperty("pmi_GHP")))
+{
+    string methodBody = "<id>"+this.getProperty("id")+"</id><pmi_container>"+this.getProperty("pmi_container")+"</pmi_container><pmi_filterflag>false</pmi_filterflag>";
+    Item applyFilteringRule = null;
+    try
+    {
+		//Will skip the Filtering Rules when the control is from method pmi_AddBOMinContainer
+        if(this.getProperty("pmi_skipFiltering","0") == "0")
+        {
+			applyFilteringRule = innovator.applyMethod("pmi_applyBOMFilteringRule", methodBody);
+		}
+    }
+    catch(Exception ex)
+    {
+        string methodcall = "<id>"+this.getProperty("id")+"</id><type>"+partClassification.getType()+"</type><keyed_name>"+partClassification.getProperty("keyed_name")+"</keyed_name><error>"+ex.Message+"</error>";
+    	Item triggerMail = innovator.applyMethod("pmi_TriggerEmailForCompliance", methodcall);
+    	if (triggerMail.isError())
+    	{
+    		throw new Exception(emailMsg+triggerMail.getErrorString());
+    	}
+    	throw new Exception("Error while applying filtering rule on Replicated Data Model"+ex.Message);
+    }
+
+    Item getDataModel= innovator.newItem("pmi_TreeGridBOMDataModel", "get");
+    getDataModel.setProperty("pmi_item_code", this.getProperty("id"));
+    getDataModel.setProperty("pmi_type", "Part");
+	getDataModel.setAttribute("select", "id");
+    getDataModel.setProperty("pmi_container", this.getProperty("pmi_container"));
+    getDataModel = getDataModel.apply();
+    if(getDataModel.isError())
+    {
+        return innovator.newError("MethodName : pmi_CreateTreeGridBOMDataModel \n Message: Error while getting Tree Grid BOM Data Model  :  "+getDataModel.getErrorString()+" \n");
+    }
+    
+    if(complianceChecksToRun != "No")
+    {
+        if(!partClassification.isError() && !partClassification.isEmpty() && partClassificationCount > 0 && (partClassification.getProperty("classification", "") == "Combustible - COM"))
+        {
+            Item finalSPResult = innovator.newItem("SQL", "SQL PROCESS");
+            finalSPResult.setProperty("name", "pmi_PCO_Final_ComplianceInputCheck");
+            finalSPResult.setProperty("PROCESS", "CALL");
+			finalSPResult.setProperty("ARG1", this.getProperty("id"));
+            finalSPResult.setProperty("ARG2", this.getProperty("pmi_container"));
+            finalSPResult = finalSPResult.apply();
+            int finalSPResultCount = finalSPResult.getItemCount();
+            if (!finalSPResult.isError() && !finalSPResult.isEmpty() && finalSPResultCount > 0)
+            {
+                List<string> finalErrorList = new List<string>();
+                for (int index = 0; index < finalSPResultCount; index++)
+                {
+                    if(finalSPResult.getItemByIndex(index).getProperty("errormsg") == "")
+                    {
+                        finalErrorList.Add(finalSPResult.getItemByIndex(index).getProperty("keyed_name", string.Empty)+" IS NOT COMPLIANT");
+                    }
+                    else
+                    {
+                        if(!String.IsNullOrEmpty(finalSPResult.getItemByIndex(index).getProperty("errormsg", string.Empty)))
+                        {
+                            finalErrorList.Add(finalSPResult.getItemByIndex(index).getProperty("errormsg", string.Empty));
+                        }
+                    }
+                }
+                if (finalErrorList.Count > 0)
+                {
+                    string finalerrorMsg = String.Join("\n", finalErrorList.ToArray());
+	                string methodcall = "<id>"+this.getProperty("id")+"</id><type>"+partClassification.getType()+"</type><keyed_name>"+partClassification.getProperty("keyed_name")+"</keyed_name><error>"+finalerrorMsg+"</error>";
+	                Item triggerMail = innovator.applyMethod("pmi_TriggerEmailForCompliance", methodcall);
+	                if (triggerMail.isError())
+	                {
+				        throw new Exception(emailMsg+triggerMail.getErrorString());
+			        }
+                    return innovator.newError("Errors in Compliance Input check: "+finalerrorMsg);  
+                }
+            }
+        }
+    }
+}
+
+Item getMaterialAnalysisData(string itemId, string type, string container, string parentPart, bool flag, Item newDataModel1, string partParent, List<Tuple<string, string>> hideParams, bool checkGHP)
+{
+    Item parent = GetParentItem(type, itemId);
+    Item newDataModel = InitializeDataModel(flag, parentPart, itemId, parent, container, type, newDataModel1);
+
+    if (newDataModel == null || newDataModel.isError() || newDataModel.isEmpty() || newDataModel.getItemCount() <= 0)
+    {
+        newDataModel = newDataModel1;
+    }
+	
+    if (!newDataModel.isError() && !newDataModel.isEmpty() && newDataModel.getItemCount() > 0)
+    {
+        if (checkGHP != true)
+        {
+            if (type == "Part" && parentPart == "")
+            {
+                AddBOM(parent, container, newDataModel, flag, newDataModel1, partParent, hideParams);
+                AddParameters(parent, hideParams, container, newDataModel, flag, newDataModel1, parentPart);
+            }
+            else if (type == "Part" && parentPart != "" && flag == true)
+            {
+                AddBOMModel(itemId, parent, container, newDataModel, newDataModel1, partParent, type);
+            }
+            AddMaterialDisclosure(parent, container, newDataModel, flag, newDataModel1, parentPart);
+        }
+        else
+        {
+            AddGlobalHarmonizedParameters(itemId, container, newDataModel, parentPart);
+        }
+    }
+    return this;
+}
+
+Item InitializeDataModel(bool flag, string parentPart, string itemId, Item parent, string container, string type, Item newDataModel1)
+{
+    Item newDataModel = null;
+    if (flag)
+    {
+        if (string.IsNullOrEmpty(parentPart))
+        {
+            newDataModel = innovator.newItem("pmi_TreeGridBOMDataModel", "add");
+            newDataModel.setAttribute("doGetItem", "0");
+            newDataModel.setProperty("pmi_item_code", itemId);
+            newDataModel.setProperty("pmi_item_type", parent.getProperty("classification", ""));
+            string subFamilyValue = parent.getProperty("pmi_sub_families","");
+            newDataModel.setProperty("pmi_sub_families", subFamilyValue);
+            newDataModel.setProperty("pmi_sub_family_label", subFamilyList.ContainsKey(subFamilyValue) ? subFamilyList[subFamilyValue] : "");
+            newDataModel.setProperty("pmi_desc", parent.getProperty("description", ""));
+            newDataModel.setProperty("pmi_revision", parent.getProperty("major_rev", ""));
+            newDataModel.setProperty("pmi_type", type);
+            newDataModel.setProperty("pmi_container", container);
+            newDataModel = newDataModel.apply();
+        }
+        else
+        {
+            Item parentCheck = GetParentItem(type, parentPart);
+            newDataModel = innovator.newItem("pmi_TreeGridBOMDataModel", "get");
+            newDataModel.setProperty("id", parentPart);
+            newDataModel.setAttribute("select", "id");
+            newDataModel.setProperty("pmi_type", type);
+            if (!parentCheck.isError() && !parentCheck.isEmpty() && parentCheck.getItemCount() > 0)
+            {
+                newDataModel.setProperty("pmi_bom_level", parentCheck.getRelatedItem().getProperty("pmi_bom_level", ""));
+            }
+            newDataModel.setProperty("pmi_container", container);
+            newDataModel = newDataModel.apply();
+        }
+    }
+    return newDataModel;
+}
+
+void AddParameters(Item parent, List<Tuple<string, string>> hideParams, string container, Item newDataModel, bool flag, Item newDataModel1, string parentPart)
+{
+    Item partParameters = innovator.newItem("pmi_Parameters","get");
+    partParameters.setProperty("source_id",parent.getID());
+	partParameters.setAttribute("select","id,related_id(id,pmi_description,keyed_name),pmi_target_value,pmi_text_value,keyed_name");
+    partParameters = partParameters.apply();
+    if(!partParameters.isError() && !partParameters.isEmpty() && partParameters.getItemCount() > 0)
+    {
+		if(hideParams.Any(c => c.Item1.Contains(parent.getProperty("classification",""))))
+		{
+			int paramCount = partParameters.getItemCount();
+			for(int i = 0 ; i < paramCount; i++)
+			{
+				string getGHPItemId = partParameters.getItemByIndex(i).getProperty("related_id","");
+				string part_ghp = innovator.getNewID()+"-"+getGHPItemId;
+				string ghpCode = partParameters.getItemByIndex(i).getRelatedItem().getProperty("keyed_name","");
+				
+				if(hideParams.Any(c => c.Item2.Contains(ghpCode) && c.Item1.Contains(parent.getProperty("classification",""))))
+				{
+					Item addGHPModel = innovator.newItem("pmi_TreeGridBOMDataModel","add");
+					Item pParam = partParameters.getItemByIndex(i).getRelatedItem();
+					addGHPModel.setAttribute("doGetItem", "0");
+					addGHPModel.setProperty("pmi_ghp_code", getGHPItemId);
+					addGHPModel.setProperty("pmi_desc", pParam.getProperty("pmi_description",""));
+					addGHPModel.setProperty("pmi_target_value", partParameters.getItemByIndex(i).getProperty("pmi_target_value",""));
+					addGHPModel.setProperty("pmi_text_value", partParameters.getItemByIndex(i).getProperty("pmi_text_value",""));
+					addGHPModel.setProperty("pmi_item_code", parent.getID());
+					addGHPModel.setProperty("pmi_type", "GHP");
+					addGHPModel.setProperty("pmi_container", container);
+					addGHPModel.setProperty("pmi_part_ghp", part_ghp);
+					addGHPModel=addGHPModel.apply();
+					if(!addGHPModel.isError() && !addGHPModel.isEmpty() && addGHPModel.getItemCount() > 0)
+					{
+						getGHPItemId= addGHPModel.getID();
+					}
+					else
+					{
+						throw new Exception("Error in creating the Tree Grid Data Model"+addGHPModel.getErrorString());
+					}
+				
+					AddGHPModelRel(newDataModel, flag, newDataModel1, getGHPItemId);
+					
+					
+				}
+				else 
+				{
+					continue; 
+				}
+			} 
+		}
+    }
+}
+
+void AddGHPModelRel(Item newDataModel, bool flag, Item newDataModel1, string getGHPItemId)
+{
+    Item addGHP = innovator.newItem("pmi_TreeGridRelsStructure","add");
+	addGHP.setAttribute("doGetItem", "0");
+	if(flag == true)
+	{
+		addGHP.setProperty("source_id", newDataModel.getID());
+	}
+	else
+	{
+		addGHP.setProperty("source_id", newDataModel1.getID());
+	}
+	
+	addGHP.setProperty("related_id", getGHPItemId);
+	addGHP=addGHP.apply();
+	if(addGHP.isError() || addGHP.isEmpty() || addGHP.getItemCount() <= 0)
+	{
+		throw new Exception("Add GHP :  "+addGHP.getErrorString());
+	}
+}
+
+void AddBOM(Item parent, string container, Item newDataModel, bool flag, Item newDataModel1, string partParent, List<Tuple<string, string>> hideParams)
+{
+    Item partBOM = parent.getRelationships(); 
+    string type="";
+    List<string> listofBOMIds = new List<string>();
+    if(!partBOM.isError() && !partBOM.isEmpty() && partBOM.getItemCount() > 0)
+    {
+    	int bomCount = partBOM.getItemCount();
+        for (int i = 0; i < bomCount; i++) 
+        {
+            Item currentPartBOM = partBOM.getItemByIndex(i);
+            string relatedid = currentPartBOM.getProperty("related_id", "");
+            Item bomRelatedItem = currentPartBOM.getRelatedItem();
+
+            if (!string.IsNullOrEmpty(relatedid) && bomRelatedItem != null) 
+            { 
+                type = bomRelatedItem.getType();
+                Item addBOMModel = innovator.newItem("pmi_TreeGridBOMDataModel","add");
+                addBOMModel.setAttribute("doGetItem", "0");
+                addBOMModel.setProperty("pmi_item_code", relatedid);
+                addBOMModel.setProperty("pmi_item_type", bomRelatedItem.getProperty("classification",""));
+                string bomLevelValue = partBOM.getItemByIndex(i).getProperty("pmi_bom_level","");
+                addBOMModel.setProperty("pmi_bom_level", bomLevelValue);
+				addBOMModel.setProperty("pmi_bom_level_label", bomLevels.ContainsKey(bomLevelValue) ? bomLevels[bomLevelValue] : "");
+                string subFamilyValue = bomRelatedItem.getProperty("pmi_sub_families","");
+                addBOMModel.setProperty("pmi_sub_families", subFamilyValue);
+                addBOMModel.setProperty("pmi_sub_family_label", subFamilyList.ContainsKey(subFamilyValue) ? subFamilyList[subFamilyValue] : "");
+                addBOMModel.setProperty("pmi_desc", bomRelatedItem.getProperty("description",""));
+                addBOMModel.setProperty("pmi_revision", bomRelatedItem.getProperty("major_rev",""));
+                addBOMModel.setProperty("pmi_manu_qty", currentPartBOM.getProperty("quantity",""));
+                addBOMModel.setProperty("pmi_bom_notes", currentPartBOM.getProperty("pmi_bomnotes",""));
+                string uomValue = currentPartBOM.getProperty("pmi_uom","");
+                addBOMModel.setProperty("pmi_uom", uomValue);
+                addBOMModel.setProperty("pmi_uom_label", uomList.ContainsKey(uomValue) ? uomList[uomValue] : "");
+                addBOMModel.setProperty("pmi_lifecycle", bomRelatedItem.getProperty("pmi_target_lc",""));
+                addBOMModel.setProperty("pmi_type", "Part");
+                addBOMModel.setProperty("pmi_old_manu_qty",currentPartBOM.getProperty("quantity",""));
+                addBOMModel.setProperty("pmi_container", container);
+                addBOMModel=addBOMModel.apply();
+                
+                if(!addBOMModel.isError() && !addBOMModel.isEmpty() && addBOMModel.getItemCount() > 0)
+                {
+                    AddBOMModelRel(newDataModel, flag, newDataModel1, partParent, hideParams, container, addBOMModel, relatedid, type);
+                    
+                }
+                else
+                {
+                    throw new Exception("Error in creating the Tree Grid Data Model"+addBOMModel.getErrorString());
+                }
+            }
+        }
+    }
+}
+Dictionary<string,string> GetListRecords(string listId, string relTypeName)
+{
+    Dictionary<string, string> listData = new Dictionary<string, string>();
+    Item getListValues = innovator.applySQL(string.Format(@"select label,value from innovator.{1} WITH(NOLOCK)
+                                    where source_id='{0}' and (inactive='0' OR inactive is null)", listId, relTypeName));
+    if(!getListValues.isError() && !getListValues.isEmpty() && getListValues.getItemCount() > 0)
+    {
+        int count = getListValues.getItemCount();
+        for(int i = 0; i < count; i++)
+        {
+            Item getItemByIndex = getListValues.getItemByIndex(i);
+            if(!listData.ContainsKey(getItemByIndex.getProperty("value","")))
+            {
+                listData.Add(getItemByIndex.getProperty("value",""),getItemByIndex.getProperty("label",""));
+            }
+        }
+    }
+    return listData;
+}
+void AddBOMModelRel(Item newDataModel, bool flag, Item newDataModel1, string partParent, List<Tuple<string, string>> hideParams, string container, Item addBOMModel, string relatedid, string type)
+{
+    Item addChildPart = innovator.newItem("pmi_TreeGridRelsStructure","add");
+	addChildPart.setAttribute("doGetItem", "0");
+	if(flag == true)
+	{
+		addChildPart.setProperty("source_id", newDataModel.getID());
+	}
+	 
+	else
+	{
+		addChildPart.setProperty("source_id", newDataModel1.getID());
+	}
+	addChildPart.setProperty("related_id", addBOMModel.getID());
+	addChildPart = addChildPart.apply();
+	if(addChildPart.isError() || addChildPart.isEmpty() || addChildPart.getItemCount() <= 0)
+	{
+		throw new Exception("Error in adding the components to the Tree Grid Model for Part"+addChildPart.getErrorString());
+	}
+	Item related_part = getMaterialAnalysisData(relatedid , type, container, "", false, addBOMModel, partParent, hideParams, false); 
+}
+
+void AddMaterialDisclosure(Item parent, string container, Item newDataModel, bool flag, Item newDataModel1, string parentPart)
+{
+    string configIdOfPart = parent.getProperty("config_id","");
+    Item partMD = innovator.applySQL(string.Format(@"select top 1 md.id as source_id, md.PMI_ITEMCODE, md.state, md.major_rev from innovator.PMI_MATERIALDISCLOSURE md WITH(NOLOCK) join innovator.pmi_MDPartGroup mdPartGrp WITH(NOLOCK) on md.id=mdPartGrp.SOURCE_ID join innovator.pmi_PartGroup_Part_Rel prtGrpRel WITH(NOLOCK) on prtGrpRel.SOURCE_ID=mdPartGrp.RELATED_ID join innovator.part part WITH(NOLOCK) on part.id=prtGrpRel.RELATED_ID where part.config_id='{0}' and md.IS_CURRENT=1 and md.state='Active' union select top 1 md.id as source_id, md.PMI_ITEMCODE , md.state, md.major_rev from innovator.PMI_MATERIALDISCLOSURE md WITH(NOLOCK) join innovator.pmi_MaterialDisclosurePart mdPart WITH(NOLOCK) on md.id=mdPart.SOURCE_ID join innovator.part part WITH(NOLOCK) on part.id=mdPart.RELATED_ID where part.config_id='{0}' and md.IS_CURRENT=1 and md.state='Active'", configIdOfPart));
+    if(!partMD.isError() && !partMD.isEmpty() && partMD.getItemCount() > 0)
+    {
+        
+    	int mdCount = partMD.getItemCount();
+        for(int i = 0 ; i < mdCount; i++)
+        {
+            string MDItemCode = partMD.getItemByIndex(i).getProperty("pmi_itemcode");
+			string getMDItemId = ReturnMDHighestRev(MDItemCode);
+            string getMDRelItemId = "";
+            if(getMDItemId != "")
+            {
+                string mdCodeId = getMDItemId.Split("|")[0];
+                string mdCodeRevision = getMDItemId.Split("|")[1];
+                
+                Item addMDModel = innovator.newItem("pmi_TreeGridBOMDataModel","add");
+    			addMDModel.setAttribute("doGetItem", "0");
+    			addMDModel.setProperty("pmi_md_code", mdCodeId);
+    			addMDModel.setProperty("pmi_desc", "");
+    			addMDModel.setProperty("pmi_target_value", "");
+    			addMDModel.setProperty("pmi_item_code", parent.getID());
+    			addMDModel.setProperty("pmi_type", "MD");
+    			addMDModel.setProperty("pmi_container", container);
+    			addMDModel.setProperty("pmi_lifecycle", "Active");
+    			addMDModel.setProperty("pmi_revision", mdCodeRevision);
+    			addMDModel=addMDModel.apply();
+    			if(!addMDModel.isError() && !addMDModel.isEmpty() && addMDModel.getItemCount() > 0)
+    			{
+    				getMDRelItemId = addMDModel.getID();
+    			}
+    			else
+    			{
+    				throw new Exception("Error in creating the Tree Grid Data Model for MD"+addMDModel.getErrorString());
+    			}
+                if(getMDRelItemId != "")
+                {
+    				Item addMD = innovator.newItem("pmi_TreeGridRelsStructure","add");
+    				addMD.setAttribute("doGetItem", "0");
+    				 if(flag == true)
+    				{
+    				    Item chkMD = innovator.newItem("pmi_MaterialDisclosurePart","get");
+                        chkMD.setProperty("related_id",newDataModel.getID());
+                        chkMD.setAttribute("select", "id, source_id");
+                        chkMD = chkMD.apply();
+                        if(!chkMD.isError() && !chkMD.isEmpty() && chkMD.getItemCount() > 0)
+                        {
+    					addMD.setProperty("source_id", newDataModel.getID());
+    					}
+    					
+    			    }
+    				else
+    				{
+    					addMD.setProperty("source_id", newDataModel1.getID());
+    				}
+    				
+    				addMD.setProperty("related_id", getMDRelItemId);
+    				addMD=addMD.apply();
+    				if(!addMD.isError() && !addMD.isEmpty() && addMD.getItemCount() > 0)
+    				{
+						Aras.Server.Security.Identity plmIdentity = Aras.Server.Security.Identity.GetByName("Super User");
+                        IDisposable elevatePermission = CCO.Permissions.GrantIdentity(plmIdentity);
+						try
+						{
+							//adding substance
+							Item subDetails = innovator.newItem("pmi_MaterialDisclr_Substance","get");
+							subDetails.setProperty("source_id", mdCodeId);
+							subDetails.setAttribute("select", "id, related_id(pmi_casnumber,state,id,major_rev,pmi_ingredientgroup),pmi_disclosed_ppm");
+							subDetails = subDetails.apply();
+							
+							if(!subDetails.isError() && !subDetails.isEmpty() && subDetails.getItemCount() > 0)
+							{
+								int subCount = subDetails.getItemCount();
+								for(int count = 0 ; count < subCount; count++)
+								{
+									string getSubItemId = subDetails.getItemByIndex(count).getProperty("related_id","");
+									Item getRelatedSubstanceItem = subDetails.getItemByIndex(count).getRelatedItem();
+										
+									Item addSubModel = innovator.newItem("pmi_TreeGridBOMDataModel","add");
+									addSubModel.setAttribute("doGetItem", "0");
+									addSubModel.setProperty("pmi_md_code", mdCodeId);
+									if(!String.IsNullOrEmpty(getSubItemId))
+									{
+										addSubModel.setProperty("pmi_sub_code", getSubItemId);
+									}
+									addSubModel.setProperty("pmi_disclosed_ppm", subDetails.getItemByIndex(count).getProperty("pmi_disclosed_ppm",""));
+									addSubModel.setProperty("pmi_cas_number", getRelatedSubstanceItem.getProperty("pmi_casnumber",""));
+									addSubModel.setProperty("pmi_ingredientgroup", getRelatedSubstanceItem.getProperty("pmi_ingredientgroup",""));
+									addSubModel.setProperty("pmi_lifecycle", getRelatedSubstanceItem.getProperty("state",""));
+									addSubModel.setProperty("pmi_revision", getRelatedSubstanceItem.getProperty("major_rev",""));
+									addSubModel.setProperty("pmi_desc", "");
+									addSubModel.setProperty("pmi_target_value", "");
+									addSubModel.setProperty("pmi_item_code", parent.getID());
+									addSubModel.setProperty("pmi_type", "Substance");
+									addSubModel.setProperty("pmi_container", container);
+									addSubModel = addSubModel.apply();
+									if(!addSubModel.isError() && !addSubModel.isEmpty() && addSubModel.getItemCount() > 0)
+									{
+										getSubItemId = addSubModel.getID();
+										Item addSub = innovator.newItem("pmi_TreeGridRelsStructure","add");
+										addSub.setAttribute("doGetItem", "0");
+										addSub.setProperty("source_id", getMDRelItemId);
+										addSub.setProperty("related_id", getSubItemId);
+										addSub=addSub.apply();
+										if(addSub.isError() || addSub.isEmpty() || addSub.getItemCount() <= 0)
+										{
+											throw new Exception("Add Substance :  "+addSub.getErrorString());
+										}
+									}
+								}
+							}
+						}
+						catch(Exception ex)
+                        {
+                            throw new Exception(ex.Message);
+                        }
+                        finally
+                        {
+                            elevatePermission?.Dispose();
+                        }
+    				}
+                }
+            }
+        }
+    }
+    else
+    {
+        Item partMD_PG = innovator.newItem("pmi_PartGroup_Part_Rel","get");
+        partMD_PG.setProperty("related_id",parent.getID());
+        partMD_PG.setAttribute("select", "id, source_id");
+        partMD_PG.setProperty("state", "Active");
+        partMD_PG = partMD_PG.apply();
+    }
+}
+
+string ReturnMDHighestRev(string md)
+{
+    HashSet<string> revisionSet = new HashSet<string>();
+    var partInfo = new Dictionary<string, Tuple<string, string, string>>();
+    string latestRev = "";
+    revisionSet.Clear();
+    Item partRevision = innovator.newItem("pmi_materialdisclosure", "get");
+    partRevision.setAttribute("select", "id,major_rev,id,generation");
+    partRevision.setAttribute("orderBy", "generation DESC");
+    partRevision.setAttribute("maxRecords", "1");
+    partRevision.setProperty("pmi_itemcode", md);
+    partRevision.setProperty("generation", "*");
+    partRevision.setProperty("state", "Active");
+    partRevision.setPropertyCondition("generation", "like");
+    partRevision = partRevision.apply();
+    if (!partRevision.isError())
+    {
+        string itemNumber = md;
+        string itemId = partRevision.getItemByIndex(0).getProperty("id","");
+        string itemMajorRev = partRevision.getItemByIndex(0).getProperty("major_rev","");
+        string itemGeneration = partRevision.getItemByIndex(0).getProperty("generation","");
+        partInfo.Add(itemId, new Tuple<string,string, string>(itemNumber, itemMajorRev, itemGeneration));
+        latestRev = itemId.ToString()+"|"+itemMajorRev;
+    }
+    
+    return latestRev;
+}
+
+void AddBOMModel(string itemId, Item parent, string container, Item newDataModel, Item newDataModel1, string partParent, string type)
+{
+    Item addBOMModel = innovator.newItem("pmi_TreeGridBOMDataModel","add");
+    addBOMModel.setAttribute("doGetItem", "0");
+    addBOMModel.setProperty("pmi_item_code", itemId);
+    addBOMModel.setProperty("pmi_item_type", parent.getProperty("classification",""));
+    string subFamilyValue = parent.getProperty("pmi_sub_families","");
+    addBOMModel.setProperty("pmi_sub_families", subFamilyValue);
+    addBOMModel.setProperty("pmi_sub_family_label", subFamilyList.ContainsKey(subFamilyValue) ? subFamilyList[subFamilyValue] : "");
+    addBOMModel.setProperty("pmi_desc", parent.getProperty("description",""));
+    addBOMModel.setProperty("pmi_revision", parent.getProperty("major_rev",""));
+    addBOMModel.setProperty("pmi_type", "Part");
+    addBOMModel.setProperty("pmi_container", container);
+    addBOMModel.setProperty("pmi_applicablepart_rollupdown", "1");
+    addBOMModel.setProperty("pmi_compliance_status", "COMPLIANT");
+    addBOMModel.setProperty("pmi_child_compliance_status", "COMPLIANT");
+    addBOMModel.setProperty("pmi_lifecycle", parent.getProperty("pmi_target_lc",""));
+    addBOMModel = addBOMModel.apply();	
+    if(!addBOMModel.isError() && !addBOMModel.isEmpty() && addBOMModel.getItemCount() > 0)
+    {
+        newPartId = addBOMModel.getID();
+        Item addChildPart = innovator.newItem("pmi_TreeGridRelsStructure","add");
+		addChildPart.setAttribute("doGetItem", "0");
+		addChildPart.setProperty("related_id", addBOMModel.getID());
+		addChildPart.setProperty("source_id", newDataModel.getID());
+		addChildPart = addChildPart.apply();
+		if(addChildPart.isError() || addChildPart.isEmpty() || addChildPart.getItemCount() <= 0)
+		{
+			throw new Exception("Error in adding the Part Components to the Tree Grid Data Model"+addChildPart.getErrorString());
+		}
+		
+		Item related_part = getMaterialAnalysisData( itemId, type, container, "", false, addBOMModel, partParent, hideParams, false); 
+    }
+}
+
+
+void AddGlobalHarmonizedParameters(string itemId, string container, Item newDataModel, string parentPart)
+{
+    Item partParameter = innovator.newItem("pmi_GlobalHarmonizedParameters","get");
+    partParameter.setProperty("id", itemId);
+    partParameter.setAttribute("select","id, keyed_name, pmi_description, pmi_lifecycle, pmi_target_value, pmi_parameter_number");
+    partParameter = partParameter.apply();
+    if(!partParameter.isError() && !partParameter.isEmpty() && partParameter.getItemCount() > 0)
+    {
+        string part_ghp_UID = innovator.getNewID()+"-"+itemId;
+        Item addnewGHPModel = innovator.newItem("pmi_TreeGridBOMDataModel","add");
+    	addnewGHPModel.setAttribute("doGetItem", "0");
+    	addnewGHPModel.setProperty("pmi_ghp_code", itemId);
+    	addnewGHPModel.setProperty("pmi_desc", partParameter.getProperty("pmi_description",""));
+    	addnewGHPModel.setProperty("pmi_target_value", partParameter.getProperty("pmi_target_value",""));
+    	addnewGHPModel.setProperty("pmi_item_code", parentPart);
+    	addnewGHPModel.setProperty("pmi_type", "GHP");
+    	addnewGHPModel.setProperty("pmi_container", container);
+    	addnewGHPModel.setProperty("pmi_part_ghp", part_ghp_UID);
+    	addnewGHPModel=addnewGHPModel.apply();
+    	if(!addnewGHPModel.isError() && !addnewGHPModel.isEmpty() && addnewGHPModel.getItemCount() > 0)
+    	{
+    		string fetchGHPItemId= addnewGHPModel.getID();
+
+            Item addGHP = innovator.newItem("pmi_TreeGridRelsStructure","add");
+            addGHP.setAttribute("doGetItem", "0");
+            addGHP.setProperty("source_id", newDataModel.getID());
+            
+            addGHP.setProperty("related_id", fetchGHPItemId);
+            addGHP=addGHP.apply();
+            if(addGHP.isError() || addGHP.isEmpty() || addGHP.getItemCount() <= 0)
+            {
+            	throw new Exception("Add GHP :  "+addGHP.getErrorString());
+            }
+    		
+    	}
+    	else
+    	{
+    		throw new Exception("Error in adding GHP inside the Tree Grid Data Model"+addnewGHPModel.getErrorString());
+    	}
+    }
+}
+
+Item GetPartItem(string partID)
+{
+    Item getPartItemDetails = innovator.newItem("Part","get");
+    getPartItemDetails.setID(partID);
+    getPartItemDetails.setAttribute("serverEvents", "0");
+    getPartItemDetails.setAttribute("select","id,keyed_name,classification,pmi_sub_families");
+    getPartItemDetails = getPartItemDetails.apply();
+        
+    if(!getPartItemDetails.isError() && !getPartItemDetails.isEmpty() && getPartItemDetails.getItemCount() > 0)
+    {
+        return getPartItemDetails;
+    }
+    return null;
+}
+
+List<Tuple<string,string>> getHideComplianceBOMRules(Item partItem)
+{
+    List<Tuple<string,string>> listOfItemTypes = new List<Tuple<string,string>>();
+    string sGetID = "select id from innovator.pmi_ComplianceBOMHideRules where pmi_parent_item_type = '"+partItem.getProperty("classification","")+"' and pmi_parent_sub_family like '%"+partItem.getProperty("pmi_sub_families","")+"%' and pmi_enable ='1' ";
+        
+        Item resultGetID = innovator.applySQL(sGetID);
+        
+        if (resultGetID.isError() || resultGetID.isEmpty() || resultGetID.getItemCount() > 1)
+        {
+            throw new Exception ("Error in fetching Replicated BOM Filtering Rules for Item Type and Sub-Classiciation combination.");
+        }
+    
+        if(resultGetID.getItemCount() > 0)
+        {
+        string idBFR = resultGetID.getItemByIndex(0).getID();
+        Item getHideCompRules = innovator.newItem("pmi_ComplianceBOMHideRules","get");
+        getHideCompRules.setID(idBFR);
+		getHideCompRules.setAttribute("serverEvents", "0");
+        Item getItemTypesRel = innovator.newItem("pmi_ListOfParamsToHide","get");
+        getHideCompRules.addRelationship(getItemTypesRel);
+        getItemTypesRel.setAttribute("orderBy","sort_order ASC");
+		getHideCompRules.setAttribute("select","id,pmi_parent_item_type,pmi_parent_sub_family,related_id(id,pmi_part_item_type,pmi_ghp_list)");
+        getHideCompRules = getHideCompRules.apply();
+        
+        if(!getHideCompRules.isError() && !getHideCompRules.isEmpty() && getHideCompRules.getItemCount() > 0)
+        {
+            Item getRels = getHideCompRules.getRelationships();
+            int count = getRels.getItemCount();
+            for(int i = 0; i < count; i++)
+            {
+                Item getItemByIndex = getRels.getItemByIndex(i);
+                    
+                listOfItemTypes.Add(Tuple.Create(getItemByIndex.getProperty("pmi_part_item_type",""),getItemByIndex.getProperty("pmi_ghp_list","")));
+            }
+        }
+    }
+        
+    return listOfItemTypes;
+}
+
+Item GetParentItem(string type, string itemId) 
+{
+    Item parent = null;
+    if(type=="Part")
+    {
+        parent = innovator.newItem("Part","get");
+        parent.setID(itemId);
+        parent.setAttribute("serverEvents", "0");
+        parent.setAttribute("select","classification,description,major_rev,keyed_name,pmi_sub_families,pmi_subfamily_label,config_id,pmi_target_lc");
+        Item partBOM = innovator.newItem("Part BOM","get");
+        partBOM.setAttribute("select", "*");
+        parent.addRelationship(partBOM);
+        parent = parent.apply();
+    }
+    if(type == "pmi_GlobalHarmonizedParameters")
+    {
+        parent = innovator.newItem(type,"get");
+        parent.setID(itemId);
+        parent.setAttribute("select","id,keyed_name,pmi_description");
+        parent = parent.apply();
+    }
+    return parent;
+}
+return this;]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_CreateTreeGridBOMDataModel</name>
+ </Item>
+</AML>

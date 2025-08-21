@@ -1,0 +1,101 @@
+﻿<AML>
+ <Item type="Method" id="AF96098FEA104587BBB1404EA64B6FDA" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[Innovator innovator = this.getInnovator();
+
+Item getPartItemDetails = GetPartItem(this.getProperty("id"));
+            
+if(getPartItemDetails != null && !getPartItemDetails.isError() && !getPartItemDetails.isEmpty() && getPartItemDetails.getItemCount() > 0)
+{
+    Item hideItemTypes = getHideComplianceBOMRules(getPartItemDetails, this.getProperty("pmi_container"));
+}
+            
+Item GetPartItem(string partID)
+    {
+        Item getPartItemDetails = innovator.newItem("Part","get");
+        getPartItemDetails.setID(partID);
+        getPartItemDetails.setAttribute("serverEvents", "0");
+        getPartItemDetails.setAttribute("select","id,keyed_name,classification,pmi_sub_families");
+        getPartItemDetails = getPartItemDetails.apply();
+        
+        if(!getPartItemDetails.isError() && !getPartItemDetails.isEmpty() && getPartItemDetails.getItemCount() > 0)
+        {
+            return getPartItemDetails;
+        }
+        return null;
+    }
+	
+Item getHideComplianceBOMRules(Item partItem, string container)
+    {
+        string sGetID = "select id from innovator.pmi_ComplianceBOMHideRules WITH(NOLOCK) where pmi_parent_item_type = '"+partItem.getProperty("classification","")+"' and pmi_parent_sub_family like '%"+partItem.getProperty("pmi_sub_families","")+"%' and pmi_enable ='1' ";
+        
+        Item resultGetID = innovator.applySQL(sGetID);
+        
+        if (resultGetID.isError() || resultGetID.isEmpty() || resultGetID.getItemCount() > 1)
+        {
+            throw new Exception ("Error in fetching Replicated BOM Filtering Rules for Item Type and Sub-Classiciation combination.");
+        }
+        if(resultGetID.getItemCount() > 0)
+        {
+            string idBFR = resultGetID.getItemByIndex(0).getID();
+            Item getHideCompRules = innovator.newItem("pmi_ComplianceBOMHideRules","get");
+            getHideCompRules.setID(idBFR);
+            Item getItemTypesRel = innovator.newItem("pmi_ListOfItemTypesToHide","get");
+            getHideCompRules.addRelationship(getItemTypesRel);
+            getItemTypesRel.setAttribute("orderBy","sort_order ASC");
+			getItemTypesRel.setProperty("pmi_enable","1");
+    		getHideCompRules.setAttribute("select","id,pmi_parent_item_type,pmi_parent_sub_family,related_id(id,pmi_parent_part_item_type,pmi_child_part_item_type,pmi_bre)");
+            getHideCompRules = getHideCompRules.apply();
+            
+            Item getDataModel= innovator.newItem("pmi_TreeGridBOMDataModel", "get");
+            getDataModel.setProperty("pmi_item_code", partItem.getID());
+            getDataModel.setProperty("pmi_type", "Part");
+            getDataModel.setProperty("pmi_container", container);
+            getDataModel = getDataModel.apply();
+    		if(getDataModel.isError())
+            {
+                return innovator.newError("MethodName : pmi_applyBOMFilteringRule \n Message: Error while getting Tree Grid BOM Data Model  :  "+getDataModel.getErrorString()+" \n");
+            }
+            
+            if(!getHideCompRules.isError() && !getHideCompRules.isEmpty() && getHideCompRules.getItemCount() > 0)
+            {
+                Item getRels = getHideCompRules.getRelationships();
+                int count = getRels.getItemCount();
+                for(int i = 0; i < count; i++)
+                {
+                    try
+                    {
+                        Item getItemByIndex = getRels.getItemByIndex(i);
+                        string parentItem = getItemByIndex.getPropertyAttribute("pmi_parent_part_item_type","keyed_name");
+                        string childItem = getItemByIndex.getPropertyAttribute("pmi_child_part_item_type","keyed_name");
+                        string bre = getItemByIndex.getPropertyAttribute("pmi_bre","keyed_name");
+                        
+                        try
+                        {
+                            Item applyBRE = innovator.applyMethod(bre, "<parentXPath>"+parentItem+"</parentXPath><childXPath>"+childItem+"</childXPath><dataModel>"+getDataModel.getID()+"</dataModel><idOfReplicatedBOMRules>"+getItemByIndex.getProperty("source_id","")+"</idOfReplicatedBOMRules><pmi_filterflag>"+this.getProperty("pmi_filterflag")+"</pmi_filterflag>");
+            				if(applyBRE.isError())
+                            {
+                                return innovator.newError("MethodName : pmi_applyBOMFilteringRule \n Message: Error while applying filtering rule on Tree Grid BOM Data Model  :  "+applyBRE.getErrorString()+" \n");
+                            }
+                        }
+                        catch(Exception ex)
+                        {
+                            throw new Exception("Error in calling the BRE Rule: "+bre+" from Filtering Rules Object"+ex.Message);
+                        }
+                        
+                    }
+                    catch(Exception ex)
+                    {
+                        throw new Exception(ex.Message);
+                    }
+                }
+            }
+        }
+        
+        return this;
+}
+return this;]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_applyBOMFilteringRule</name>
+ </Item>
+</AML>

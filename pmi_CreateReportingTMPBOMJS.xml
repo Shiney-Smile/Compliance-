@@ -1,0 +1,43 @@
+﻿<AML>
+ <Item type="Method" id="FF1C33AEE553486CB53CC1F8B9523A5E" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[let wnd = aras.getMainWindow();
+const topWnd = aras.getMostTopWindowWithAras(window);
+wnd = wnd === topWnd ? wnd.main : topWnd;
+const inn =  new Innovator();
+const itemId = this.getID();
+const itemType = this.getType();
+const classification = this.getProperty("classification");
+const itemName = this.getProperty("keyed_name");
+let formNd = aras.IomInnovator.newItem('Form', 'get');
+formNd.setAttribute("select", "id,width,height");
+formNd.setProperty("name", 'pmi_DisplayRevisionReplicatedBOM');
+formNd = formNd.apply();
+const param = {};
+param.title = itemName;
+param.itemNumber = itemName;
+param.formId = formNd.getProperty('id', '');
+param.aras = aras;
+param.isEditMode = true;
+
+const width = top.aras.getItemProperty(formNd.node, 'width',400);
+const height = top.aras.getItemProperty(formNd.node, 'height',300);
+param.TokenID = aras.OAuthClient.getToken();
+param.CurrentUser = top.aras.getLoggedUserItem();
+param.CurrentUserDetails = top.aras.getCurrentLoginName();
+param.innovatorObject = inn;
+param.ItemId = itemId;
+param.ItemType = itemType;
+param.ComplianceCheck = "Yes";
+param.Classification = classification;
+const options = {
+	dialogWidth: width,
+	dialogHeight: height,
+	resizable: true
+ };
+aras.modalDialogHelper.show('DefaultPopup', wnd, param, options,'ShowFormAsADialog.html');
+]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_CreateReportingTMPBOMJS</name>
+ </Item>
+</AML>

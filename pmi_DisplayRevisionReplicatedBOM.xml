@@ -1,0 +1,79 @@
+﻿<AML>
+ <Item type="Form" id="2BDD795EDB4148CB952190C6A831FFD8" action="add">
+  <height>234</height>
+  <stylesheet><![CDATA[../styles/default.css]]></stylesheet>
+  <width>699</width>
+  <name>pmi_DisplayRevisionReplicatedBOM</name>
+  <Relationships>
+   <Item type="Body" id="61C2551FFD654990BC44D2F47086094E" action="add">
+    <sort_order>128</sort_order>
+    <source_id keyed_name="pmi_DisplayRevisionReplicatedBOM" type="Form">2BDD795EDB4148CB952190C6A831FFD8</source_id>
+    <Relationships>
+     <Item type="Field" id="8025405E76C2477C93E4DA2CF0A0BCFF" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>button</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Proceed</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <sort_order>256</sort_order>
+      <source_id keyed_name="61C2551FFD654990BC44D2F47086094E" type="Body">61C2551FFD654990BC44D2F47086094E</source_id>
+      <tab_stop>1</tab_stop>
+      <x>359</x>
+      <y>18</y>
+      <name>pmi_proceed_btn</name>
+      <Relationships>
+       <Item type="Field Event" id="15965CF86E874459A643BE61C4BBA02F" action="add">
+        <field_event>onclick</field_event>
+        <related_id keyed_name="pmi_TriggerReplicatedBOMCreation" type="Method">
+         <Item type="Method" action="get" select="id">
+          <name>pmi_TriggerReplicatedBOMCreation</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="pmi_proceed_btn" type="Field">8025405E76C2477C93E4DA2CF0A0BCFF</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+     <Item type="Field" id="057625A849544C8EB4800D3D1D808641" action="add">
+      <border_width>0</border_width>
+      <display_length>5</display_length>
+      <display_length_unit>em</display_length_unit>
+      <field_type>dropdown</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Revision</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <sort_order>128</sort_order>
+      <source_id keyed_name="61C2551FFD654990BC44D2F47086094E" type="Body">61C2551FFD654990BC44D2F47086094E</source_id>
+      <tab_stop>1</tab_stop>
+      <x>190</x>
+      <y>10</y>
+      <name>pmi_revision</name>
+     </Item>
+    </Relationships>
+   </Item>
+   <Item type="Form Event" id="0C39288A27F04EACA6397A0DFF10EADF" action="add">
+    <form_event>onload</form_event>
+    <related_id keyed_name="pmi_LoadRevisionsOnLoad" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_LoadRevisionsOnLoad</name>
+     </Item>
+    </related_id>
+    <sort_order>128</sort_order>
+    <source_id keyed_name="pmi_DisplayRevisionReplicatedBOM" type="Form">2BDD795EDB4148CB952190C6A831FFD8</source_id>
+   </Item>
+  </Relationships>
+ </Item>
+</AML>

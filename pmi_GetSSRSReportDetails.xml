@@ -1,0 +1,53 @@
+﻿<AML>
+ <Item type="Method" id="65E60E5904DE41C5960709C034411F1A" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[    Innovator inn = this.getInnovator();  
+    string hashicorpTokenEndPointSecret="";
+    string hashicorpTokenEndPointClient="";
+    string hashicorpEndUrl="";
+    string hashicorpVaultNameSpace="";
+    string hashicorpRole_id="";
+    string hashicorpSecret_id="";
+    string hashicorpBaseUrl="";
+    string sqlQuery = string.Format(@"select name,value from innovator.VARIABLE where name like '%hashicorp%' OR name like '%aurora%'");
+    Item results = inn.applySQL(sqlQuery);
+    int totalCount = results.getItemCount();
+    for(int index=0;index<totalCount;index++)
+    {
+        if("pmi_hashicorpTokenEndPointSSRS" == results.nodeList[index].SelectNodes("name")[0].InnerText)
+        { 
+            hashicorpTokenEndPointSecret = results.nodeList[index].SelectNodes("value")[0].InnerText;
+        }
+        if("pmi_hashicorpEndUrlMuleSoft" == results.nodeList[index].SelectNodes("name")[0].InnerText)
+        { 
+            hashicorpEndUrl = results.nodeList[index].SelectNodes("value")[0].InnerText;
+        }
+        if("pmi_hashicorpVaultNameSpace" == results.nodeList[index].SelectNodes("name")[0].InnerText)
+        { 
+            hashicorpVaultNameSpace = results.nodeList[index].SelectNodes("value")[0].InnerText;
+        }
+        if("pmi_hashicorpRole_id" == results.nodeList[index].SelectNodes("name")[0].InnerText)
+        { 
+            hashicorpRole_id = results.nodeList[index].SelectNodes("value")[0].InnerText;
+        }
+        if("pmi_hashicorpSecret_id" == results.nodeList[index].SelectNodes("name")[0].InnerText)
+        { 
+            hashicorpSecret_id = results.nodeList[index].SelectNodes("value")[0].InnerText;
+        }
+        if("pmi_hashicorpBaseUrl" == results.nodeList[index].SelectNodes("name")[0].InnerText)
+        { 
+            hashicorpBaseUrl = results.nodeList[index].SelectNodes("value")[0].InnerText;
+        }
+    }
+    
+    pmi_IntegrationSolution_CC.HashiCorpVaultAccess myObject = new pmi_IntegrationSolution_CC.HashiCorpVaultAccess();
+    //Fetching Role ID and Secret ID from Vault
+    
+    string getClientSecretId = myObject.GetPassword(hashicorpTokenEndPointSecret,hashicorpTokenEndPointClient,hashicorpEndUrl,hashicorpVaultNameSpace,hashicorpRole_id,hashicorpSecret_id,hashicorpBaseUrl).Result.ToString();
+    Item itm=newItem();
+    itm.setProperty("ssrs_pwd",getClientSecretId);
+    return itm;]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_GetSSRSReportDetails</name>
+ </Item>
+</AML>
