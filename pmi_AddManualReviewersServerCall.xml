@@ -1,0 +1,214 @@
+﻿<AML>
+ <Item type="Method" id="482462008D2A4B748F8B551E39F8EADA" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[    bool isValuesAvl = false;
+    string activityId = "";
+    Item actAssignment = null;
+    Innovator innovator = this.getInnovator();
+    string itemType = this.getProperty("itemType");
+    Item workflow = innovator.newItem("Workflow","get"); 
+    workflow.setProperty("source_id", this.getProperty("itemId"));
+    workflow.setAttribute("select", "related_id"); 
+    Item workflowProcess = workflow.createRelatedItem("Workflow Process","get"); 
+    workflowProcess.setAttribute("select", "id,name"); 
+    Item workflowProcessActivity = workflowProcess.createRelationship("Workflow Process Activity","get"); 
+    workflowProcessActivity.setAttribute("select", "related_id");
+    Item activity = workflowProcessActivity.createRelatedItem("Activity", "get"); 
+    activity.setProperty("state", "Active");
+    activity.setAttribute("select", "id,name");
+    Item activityAssignment = activity.createRelationship("Activity Assignment", "get");
+    activityAssignment.setAttribute("select", "id, related_id,voting_weight");
+    workflow = workflow.apply();
+    if(workflow.isError())
+    {
+    	return innovator.newError("Error getting the Workflow Activity: " +workflow.getErrorString());
+    }
+    var identityIds = this.getProperty("identityId").Split(',');
+    var comments = this.getProperty("comments");
+    Item wpItem = workflow.getItemsByXPath("//Item[@type='Workflow Process']");
+    if(!wpItem.isError() && wpItem.getItemCount() > 1)
+    {
+        int wpCount = wpItem.getItemCount();
+        for(int i = 0 ; i < wpCount; i++)
+        {
+            Item currentWF = wpItem.getItemByIndex(i);
+            string wpName = currentWF.getProperty("name","");
+            if(wpName.Contains(":"))
+            {
+                Item wpaItem = currentWF.getRelationships();
+                Item activityItem = wpaItem.getItemByIndex(0).getRelatedItem();
+                activityId = activityItem.getID();
+                actAssignment = activityItem.getRelationships();
+                isValuesAvl = true;
+            }
+        }
+    }
+    if(!isValuesAvl)
+    {
+        activityId = workflow.getItemsByXPath("//Item[@type='Activity']").getItemByIndex(0).getID();
+	    actAssignment = workflow.getItemsByXPath("//Item[@type='Activity Assignment']");
+    }
+	string votingWeight = string.Empty;
+	if(this.getProperty("appendReviewers") == "1")
+	{
+		votingWeight = (100 / (identityIds.Length + actAssignment.getItemCount())+1).ToString();
+		string updateAssignment = UpdateDelAssignment(actAssignment, votingWeight, "edit");
+		if(!string.IsNullOrEmpty(updateAssignment))
+		{
+			return innovator.newError(updateAssignment);
+		}
+		string appendReviewers = AddAssignment(activityId, identityIds, votingWeight, comments);
+		if (!string.IsNullOrEmpty(appendReviewers))
+		{
+		    if(String.Equals(itemType, "pmi_PPO", StringComparison.OrdinalIgnoreCase))
+        	{
+        	    string ppoId = this.getProperty("itemId");
+        	    Item addIdentity = AddIdentityApprovalMatrix(identityIds, ppoId, innovator, CCO);
+        	    if (addIdentity.isError())
+            	{
+            		throw new Exception(addIdentity.getErrorString());
+            	}
+            	string updatedIdentity = string.Join(",", identityIds.Select(item => "" + item + ""));
+            	string methodBody = "<identityIds>"+updatedIdentity+"</identityIds><ppoId>"+ppoId+"</ppoId>";
+                Item updatePermission = innovator.applyMethod("pmi_UpdatePPO_ItemPermission", methodBody);
+                if (updatePermission.isError())
+            	{
+            		throw new Exception(updatePermission.getErrorString());
+            	}
+        	}
+			return innovator.newResult(appendReviewers);
+		}
+		return this;
+	}
+	else
+	{
+		votingWeight = (100 / identityIds.Length +1).ToString();
+		string deleteAssignment = UpdateDelAssignment(actAssignment, votingWeight, "delete");
+    	if(!string.IsNullOrEmpty(deleteAssignment))
+    	{
+    		return innovator.newError(deleteAssignment);
+    	}
+		string addReviewers = AddAssignment(activityId, identityIds, votingWeight, comments);
+		if (!string.IsNullOrEmpty(addReviewers))
+		{
+		    if(String.Equals(itemType, "pmi_PPO", StringComparison.OrdinalIgnoreCase))
+        	{
+        	    string ppoId = this.getProperty("itemId");
+        	    Item addIdentity = AddIdentityApprovalMatrix(identityIds, ppoId, innovator, CCO);
+        	    if (addIdentity.isError())
+            	{
+            		throw new Exception(addIdentity.getErrorString());
+            	}
+            	string updatedIdentity = string.Join(",", identityIds.Select(item => "" + item + ""));
+            	string methodBody = "<identityIds>"+updatedIdentity+"</identityIds><ppoId>"+ppoId+"</ppoId>";
+                Item updatePermission = innovator.applyMethod("pmi_UpdatePPO_ItemPermission", methodBody);
+                if (updatePermission.isError())
+            	{
+            		throw new Exception(updatePermission.getErrorString());
+            	}
+        	}
+			return innovator.newResult(addReviewers);
+		}
+	}
+    return this;
+}
+private string AddAssignment (string activityId, string [] identityIds, string votingWeight, string comments)
+{
+    List<string> ouputMessage = new List<string>();
+    for (int i = 0; i < identityIds.Length; i++)
+    {
+        string IdentityName = this.getInnovator().getItemById("Identity", (string)identityIds[i]).getProperty("keyed_name");
+        Item assignment = this.newItem("Activity Assignment", "get");
+        assignment.setProperty("source_id", activityId);
+        assignment.setProperty("comments", comments);
+        assignment.setProperty("related_id", (string)identityIds[i]);
+        Item getResult = assignment.apply();
+        if (!getResult.isError())
+        {
+            ouputMessage.Add(IdentityName+": Selected assignments already exist as a Reviewers. \n");
+        }
+        else
+        {
+            assignment.setPropertyAttribute("locked_by_id","is_null","1");
+            assignment.setProperty("voting_weight", votingWeight);
+            assignment.setAction("add");
+            Item addResult = assignment.apply();
+            if (addResult.isError())
+            {
+                ouputMessage.Add(IdentityName+": Error adding the Assignment. "+addResult.getErrorString()+"\n");
+            }
+            else
+            {
+                ouputMessage.Add(IdentityName+": Assignment added Successfully. \n");
+            }
+        }
+    }
+    return string.Join(" ", ouputMessage);
+}
+private Item AddIdentityApprovalMatrix(string [] identityIds, string ppoId, Innovator inn, Aras.Server.Core.CallContext CCO)
+{
+    Item result = null;
+    Aras.Server.Security.Identity plmIdentity = Aras.Server.Security.Identity.GetByName("Super User");
+    using (CCO.Permissions.GrantIdentity(plmIdentity))
+    {
+    string assignmentAmlQuery = string.Empty;
+    Item ppoItem = this.newItem("pmi_PPO", "get");
+    ppoItem.setProperty("id", ppoId);
+    ppoItem.setAttribute("select", "state,pmi_prototype_production_center");
+    Item getResult = ppoItem.apply();
+     if (!getResult.isError())
+     {
+        string ppoCenter = getResult.getProperty("pmi_prototype_production_center", string.Empty);
+        string ppoState = getResult.getProperty("state", string.Empty);
+        if(!String.IsNullOrEmpty(ppoCenter))
+        {
+            int count = identityIds.Length;
+            for(int index = 0; index < count; index++)
+            {
+                Item getPPD_Permission = inn.newItem("pmi_PPO_Hidden_Identity", "get");
+                getPPD_Permission.setProperty("source_id", ppoId);
+                getPPD_Permission.setProperty("pmi_approver_identity", (string)identityIds[index]);
+                getPPD_Permission.setProperty("pmi_state", ppoState);
+                getPPD_Permission.setAttribute("select", "pmi_approver_identity,pmi_state");
+                getPPD_Permission = getPPD_Permission.apply();
+                int count1 = getPPD_Permission.getItemCount();
+                if(getPPD_Permission.isError() && count1 == 0)
+                {
+                    Item addAssignment = inn.newItem("pmi_PPO_Hidden_Identity", "add");
+         			addAssignment.setProperty("source_id", ppoId);
+         			addAssignment.setProperty("pmi_approver_identity", (string)identityIds[index]);
+         			addAssignment.setProperty("pmi_state", ppoState);
+         			assignmentAmlQuery = addAssignment.node.OuterXml + assignmentAmlQuery;
+                }
+                result = inn.applyAML("<AML>" + assignmentAmlQuery + "</AML>"); 
+                if (result.isError())
+                {
+        			throw new Exception(result.getErrorString());
+                }
+            }
+        }
+    }
+    }
+    return result;
+}
+private string UpdateDelAssignment (Item activityAssign, string votingWeight, string itemAction)
+{
+    string message = string.Empty;
+    int actAssignCount = activityAssign.getItemCount();
+    for (int index = 0; index < actAssignCount; index++)
+    {
+        Item oneAssignment = activityAssign.getItemByIndex(index);
+        oneAssignment.setAction(itemAction);
+        oneAssignment.setProperty("voting_weight", votingWeight);
+        Item updateResult = oneAssignment.apply();
+        if (updateResult.isError())
+        {
+			message = "Workflow Assignment: Error updating Assignment: "+updateResult.getErrorString();
+            return message;
+        }
+    }
+    return message;]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_AddManualReviewersServerCall</name>
+ </Item>
+</AML>

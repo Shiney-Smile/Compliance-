@@ -1,0 +1,41 @@
+﻿<AML>
+ <Item type="Method" id="58782E9282BC4DBA9128598B64C10976" action="add">
+  <comments>This Method will load Reg Specs according to Sub Family and Item Type of part</comments>
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[
+const contextItem = parent.thisItem;
+const isItemLocked = contextItem.getLockStatus();
+
+if(isItemLocked === 1)
+{
+    return aras.AlertError("Cannot calculate when the Reg. Specification is claimed. Please click on 'Done' and re-trigger.");
+}
+else{
+        try
+        {
+            var type = contextItem.getType();
+            let createRegCompPartBoM = contextItem.newItem("Method","pmi_LoadRegSpecs");
+            createRegCompPartBoM.setProperty("id",contextItem.getID());
+            createRegCompPartBoM.setProperty("itemType", "pmi_RegulatorySpec");
+            createRegCompPartBoM.setProperty("type",contextItem.getType());
+            createRegCompPartBoM.setProperty("keyed_name",contextItem.getProperty("keyed_name",""));
+            if(type == "pmi_ComplianceReplicaBOM")
+            {
+                createRegCompPartBoM.setProperty("pmi_PartCode",contextItem.getProperty("pmi_part_item_code",""));
+            }
+            result = createRegCompPartBoM.apply();
+            if(result.isError())
+            {
+                return aras.AlertError(result.getErrorString());
+            }
+        }
+        catch (e) 
+        {
+            aras.AlertError(e.Message);
+        }
+}
+]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_LoadRegSpecJS</name>
+ </Item>
+</AML>

@@ -1,0 +1,69 @@
+﻿<AML>
+ <Item type="Method" id="57106D77534A491882528587D7C51B93" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[let wnd = aras.getMainWindow();
+const topWnd = aras.getMostTopWindowWithAras(window);
+wnd = wnd === topWnd ? wnd.main : topWnd;
+let selectedIds;
+let ecoState;
+let itemType;
+if (wnd.parent.main) {
+    selectedIds = wnd.parent.main.work.grid.getSelectedItemIds();
+    ecoState = aras.getItemProperty(this.node, "state");
+} else {
+    selectedIds = [wnd.itemID];
+    ecoState = aras.getItemProperty(wnd.item, "state");
+}
+if (selectedIds.length < 1) {
+    return;
+}
+const isMultiple = selectedIds.length > 1;
+const isMultipleAndFirst = isMultiple && !wnd.createRelationshipsDialogStorage;
+const isMultipleAndLast = isMultiple && wnd.createRelationshipsDialogStorage && wnd.createRelationshipsDialogStorage.callsCount >= selectedIds.length - 1;
+if (isMultipleAndFirst) {
+    wnd.createRelationshipsDialogStorage = {
+        callsCount: 0
+    };
+}
+if (isMultiple) {
+    wnd.createRelationshipsDialogStorage.callsCount++;
+}
+if (isMultipleAndLast) {
+    delete wnd.createRelationshipsDialogStorage;
+    return;
+}
+if (isMultiple && !isMultipleAndFirst) {
+    return;
+}
+if (isMultiple) {
+    aras.AlertError('Select only one row to use this Action.');
+    return;
+}
+if (this.getLockStatus() === 1) {
+    aras.AlertError('Please Unlock the item');
+    return;
+}
+if (ecoState === "Released" || ecoState === "Cancelled") {
+    aras.AlertError("Update Assignments action is not allowed when the Change object is in the released / cancelled state.");
+    return;
+}
+const fetchForm = aras.getFormForDisplay("pmi_AddManualReviewersForm", "by-name");
+const formId = fetchForm.getID();
+const height = fetchForm.getProperty("height", "300");
+const width = fetchForm.getProperty("width", "430");
+const param = {
+    title: "Update Assignments",
+    aras: top.aras,
+    formId: formId,
+    itemType: this.getType(),
+    itemId: selectedIds,
+    isEditMode: false,
+    dialogWidth: width,
+    dialogHeight: height,
+    content: 'ShowFormAsADialog.html'
+};
+wnd.ArasModules.Dialog.show('iframe', param);]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_AddManualReviewersOpenForm</name>
+ </Item>
+</AML>

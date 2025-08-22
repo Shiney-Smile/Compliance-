@@ -1,0 +1,218 @@
+﻿<AML>
+ <Item type="Form" id="4DD5890BEC4044B39A10909499538B8A" action="add">
+  <description />
+  <height>300</height>
+  <stylesheet><![CDATA[../styles/default.css]]></stylesheet>
+  <width>430</width>
+  <name>pmi_AddManualReviewersForm</name>
+  <Relationships>
+   <Item type="Body" id="6436B653C57848B28117173D10760C9E" action="add">
+    <css>textarea {resize: none;}</css>
+    <sort_order>128</sort_order>
+    <source_id keyed_name="pmi_AddManualReviewersForm" type="Form">4DD5890BEC4044B39A10909499538B8A</source_id>
+    <Relationships>
+     <Item type="Field" id="700B8C64617344D6BE7BAC8C2F960118" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>checkbox</field_type>
+      <font_color>#333333</font_color>
+      <font_family>tahoma, arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Append Assignment</label>
+      <label_position>right</label_position>
+      <list_no_blank>0</list_no_blank>
+      <sort_order>896</sort_order>
+      <source_id keyed_name="6436B653C57848B28117173D10760C9E" type="Body">6436B653C57848B28117173D10760C9E</source_id>
+      <tab_stop>1</tab_stop>
+      <x>70</x>
+      <y>180</y>
+      <name>pmi_append</name>
+     </Item>
+     <Item type="Field" id="74B960671E114332A46C982B0160FAFE" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>button</field_type>
+      <font_color>#000000</font_color>
+      <font_family>tahoma, arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Cancel</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <sort_order>256</sort_order>
+      <source_id keyed_name="6436B653C57848B28117173D10760C9E" type="Body">6436B653C57848B28117173D10760C9E</source_id>
+      <tab_stop>1</tab_stop>
+      <text_align>center</text_align>
+      <x>220</x>
+      <y>220</y>
+      <name>pmi_cancel</name>
+      <Relationships>
+       <Item type="Field Event" id="DC196AB8415945728E8E4018405B48B7" action="add">
+        <field_event>onclick</field_event>
+        <related_id keyed_name="pmi_AddManualReviewersCancel" type="Method">
+         <Item type="Method" action="get" select="id">
+          <name>pmi_AddManualReviewersCancel</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="pmi_cancel" type="Field">74B960671E114332A46C982B0160FAFE</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+     <Item type="Field" id="C6D90B8409A54FDC8D7AD4092373214A" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>textarea</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Comments</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <sort_order>1408</sort_order>
+      <source_id keyed_name="6436B653C57848B28117173D10760C9E" type="Body">6436B653C57848B28117173D10760C9E</source_id>
+      <tab_stop>1</tab_stop>
+      <textarea_cols>255</textarea_cols>
+      <textarea_rows>40</textarea_rows>
+      <x>70</x>
+      <y>100</y>
+      <name>pmi_comments</name>
+     </Item>
+     <Item type="Field" id="828B27E0855944C5BEE4CC2C12300BD6" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>label</field_type>
+      <font_color>#ff0000</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>12pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">*</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <sort_order>1536</sort_order>
+      <source_id keyed_name="6436B653C57848B28117173D10760C9E" type="Body">6436B653C57848B28117173D10760C9E</source_id>
+      <tab_stop>1</tab_stop>
+      <x>126</x>
+      <y>93</y>
+      <name>pmi_comments_req</name>
+     </Item>
+     <Item type="Field" id="413E1752729B40B78BFF5C40E03B7F15" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>html</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <html_code><![CDATA[<input name="pmi_select" align="absmiddle" style="display: inline; cursor: pointer;"  class="sys_f_input_image sys_f_input_image_ie" onclick="API.Search()" type="image" src="../images/Ellipsis.svg" border="0" unselectable="on" title="Select Other Item"></input>]]></html_code>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <sort_order>768</sort_order>
+      <source_id keyed_name="6436B653C57848B28117173D10760C9E" type="Body">6436B653C57848B28117173D10760C9E</source_id>
+      <tab_stop>1</tab_stop>
+      <x>340</x>
+      <y>50</y>
+      <name>pmi_select</name>
+     </Item>
+     <Item type="Field" id="52533399B1F643F78F1D355406461608" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>button</field_type>
+      <font_color>#000000</font_color>
+      <font_family>tahoma, arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Submit</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <sort_order>128</sort_order>
+      <source_id keyed_name="6436B653C57848B28117173D10760C9E" type="Body">6436B653C57848B28117173D10760C9E</source_id>
+      <tab_stop>1</tab_stop>
+      <text_align>center</text_align>
+      <x>100</x>
+      <y>220</y>
+      <name>pmi_submit</name>
+      <Relationships>
+       <Item type="Field Event" id="BC7C650D90DA4C669F2B69A3E8FF3AE4" action="add">
+        <field_event>onclick</field_event>
+        <related_id keyed_name="pmi_AddManualReviewersCreate" type="Method">
+         <Item type="Method" action="get" select="id">
+          <name>pmi_AddManualReviewersCreate</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="pmi_submit" type="Field">52533399B1F643F78F1D355406461608</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+     <Item type="Field" id="F37ED6E432484EF897DE351B3D6E4FEF" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>label</field_type>
+      <font_color>#ff0000</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>12pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">*</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <sort_order>1280</sort_order>
+      <source_id keyed_name="6436B653C57848B28117173D10760C9E" type="Body">6436B653C57848B28117173D10760C9E</source_id>
+      <tab_stop>1</tab_stop>
+      <x>188</x>
+      <y>4</y>
+      <name>pmi_user_req</name>
+     </Item>
+     <Item type="Field" id="C5C175F7AEF84BFFA1C88FC58FEC4C97" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>textarea</field_type>
+      <font_color>#333333</font_color>
+      <font_family>tahoma, arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>1</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Selected Assignments</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <sort_order>640</sort_order>
+      <source_id keyed_name="6436B653C57848B28117173D10760C9E" type="Body">6436B653C57848B28117173D10760C9E</source_id>
+      <tab_stop>1</tab_stop>
+      <textarea_cols>255</textarea_cols>
+      <textarea_rows>55</textarea_rows>
+      <x>70</x>
+      <y>10</y>
+      <name>pmi_users</name>
+     </Item>
+    </Relationships>
+   </Item>
+   <Item type="Form Event" id="4D1D6438272D437D86A52CB641E0E9F3" action="add">
+    <form_event>onload</form_event>
+    <related_id keyed_name="pmi_AddManualReviewersAPI" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_AddManualReviewersAPI</name>
+     </Item>
+    </related_id>
+    <sort_order>128</sort_order>
+    <source_id keyed_name="pmi_AddManualReviewersForm" type="Form">4DD5890BEC4044B39A10909499538B8A</source_id>
+   </Item>
+  </Relationships>
+ </Item>
+</AML>

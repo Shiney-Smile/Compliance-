@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<project name="Default.Settings">
+  <property name="Path.To.Baselines.Dir" overwrite="true" value="C:\v28\CLIPP\R2Baseline1208" />
+  <property name="Path.To.DB.Bak" overwrite="true" value="C:\v28\CLIPP\R2Baseline1208\R2Baseline1208.bak" />
+  <property name="Path.To.CodeTree.Zip" overwrite="true" value="C:\v28\CLIPP\R2Baseline1208\R2Baseline1208.zip" />
+  <property name="MSSQL.Server" overwrite="true" value="(local)\SQLEXPRESS" />
+  <property name="MSSQL.SA.Password" overwrite="true" value="abcd@1234" />
+  <property name="MSSQL.Innovator.Password" overwrite="true" value="abcd@1234" />
+  <property name="MSSQL.Innovator.Regular.Password" overwrite="true" value="abcd@1234" />
+  <property name="Last.Commit.Before.Current.Release" overwrite="true" value="R2Baseline1208" />
+  <!-- <property name="Last.Commit.Before.Current.Release" overwrite="true" value="DEV29052024" /> -->
+  <!-- Newly Added Property-->
+  <property name="Innovator.User" overwrite="true" value="root" />
+  <property name="Innovator.Password" overwrite="true" value="innovator" />
+  <property name="MSSQL.SA.User" overwrite="true" value="sa" />
+  <property name="Deployment.Server.Name" overwrite="true" value="localhost" />
+  <property name="Baseline.Created.From.DB" overwrite="true" value="CCR1BaselineV2" />
+  <!-- <property name="Baseline.Created.From.DB" overwrite="true" value="R2baseline2207" /> -->
+  <!--Property To Update for Refresh-->
+  <property name="MSSQL.Database.Name" overwrite="true" value="PMIAWSCLIPP0907-PMI-A28-08" />
+  <property name="Path.To.Installed.Innovator" overwrite="true" value="C:\v28\CLIPP\instances28\PMIAWSCLIPP0907-PMI-A28-08" />
+  <property name="Name.Of.Innovator.Instance" overwrite="true" value="PMIAWSCLIPP0907-PMI-A28-08" />
+  <!-- Here you can set all the properties specific to Innovator 14, in particular, the licenses -->
+  <property name="Innovator.License.Type" overwrite="true" value="Unlimited" />
+  <property name="Innovator.License.Company" overwrite="true" value="Phillip Morris International" />
+  <property name="Innovator.License.Key" overwrite="true" value="7246fb4dc417243f45323c4f5648aa38" />
+  <property name="Innovator.Activation.Key" overwrite="true" value="D2A8FB1527A240B09B6E96326891ABF1" />
+  <!-- Aras Installer Directory Path-->
+  <!--<property name="Aras.Installer.Dir" overwrite="true" value="C:\CLIPP\Aras15Installer" />-->
+  <property name="Aras.Installer.Dir" overwrite="true" value="C:\v28\CLIPP\Aras28Installer" />
+  <property name="Aras.Instance.Installation.Dir" overwrite="true" value="C:\v28\CLIPP\instances28" />
+  <property name="Aras.Instance.Installation.UI.Mode" overwrite="true" value="false" />
+  <Property name="Aras.AgentService.Port" overwrite="true" value="8771" />
+</project>

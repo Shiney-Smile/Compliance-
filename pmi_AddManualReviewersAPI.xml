@@ -1,0 +1,92 @@
+﻿<AML>
+ <Item type="Method" id="8F3FCB8DDE324540A5247A31041A966A" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[AddReviewers = function() {
+    const appendApprovers = document.querySelector('input[name=\'pmi_append\']');
+    appendApprovers.checked = true;
+};
+AddReviewers.prototype.Submit = function() {
+    let tmpDialogArguments = window.frameElement ? window.frameElement.dialogArguments : null;
+    tmpDialogArguments = tmpDialogArguments || window.dialogArguments || parent.dialogArguments || parent.parent.dialogArguments;
+    const appendReviewers = document.querySelector('input[name=pmi_append]').checked ? '1' : '0';
+    const selectedIdentity = document.querySelector('textarea[name=\'pmi_users\']');
+    const comments = document.querySelector('textarea[name=\'pmi_comments\']');
+    if(!selectedIdentity.itemId || !comments.value)
+    {
+        return aras.AlertError("Comments / Selected Assignment(s) fields are mandatory to perform this action. Please update comments to proceed further.");
+    }
+    let addAssignment = aras.newIOMItem('Method', 'pmi_AddManualReviewersServerCall');
+    addAssignment.setProperty("identityId", selectedIdentity.itemId);
+    addAssignment.setProperty("itemType", tmpDialogArguments.itemType);
+    addAssignment.setProperty("itemId", tmpDialogArguments.itemId);
+    addAssignment.setProperty("appendReviewers", appendReviewers);
+    addAssignment.setProperty("comments", comments.value);
+    addAssignment = addAssignment.apply();
+    if (addAssignment.isError()) {
+        parent.args.dialog.close();
+        aras.AlertError(addAssignment.getErrorString());
+    } else {
+        const title = 'Update Assignments Results';
+        const evalMethodParams = [title, addAssignment.getResult()];
+        aras.evalMethod('pmi_AddManualReviewersOpenMsg', undefined, evalMethodParams);
+        AddReviewers.prototype.refreshSignOff();
+        parent.args.dialog.close();
+    }
+};
+AddReviewers.prototype.refreshSignOff = function() {
+    if (aras.getMostTopWindowWithAras(window).frames.relationships) {
+        const iFramesCollection = aras.getMostTopWindowWithAras(window).frames.relationships.iframesCollection;
+        for (const tabId in iFramesCollection) {
+            if ({}.hasOwnProperty.call(iFramesCollection, tabId)) {
+                const relshipTypeNd = aras.getRelationshipType(tabId);
+                const relshipTypeName = aras.getItemProperty(relshipTypeNd.node, 'name');
+                if (relshipTypeName === 'Express ECO Signoff' || relshipTypeName === 'pmi_TemplateECO_Signoff' || relshipTypeName === 'pmi_GHPECO_Signoff_Rel' || relshipTypeName === 'pmi_PPO_Signoff_Rel' || relshipTypeName === 'pmi_TestingOrder_Signoff' || relshipTypeName === 'pmi_QcsECO_Signoff') {
+                    iFramesCollection[tabId].contentWindow.location.reload();
+                }
+            }
+        }
+    }
+};
+AddReviewers.prototype.Search = function() {
+    let wnd = top.aras.getMainWindow();
+    wnd = wnd === top ? wnd.main : top;
+    const innerHeight = (wnd.innerHeight < 300) ? 300 : wnd.innerHeight - 300;
+    const innerWidth = (wnd.innerWidth > 800) ? 800 : wnd.innerWidth;
+    const params = {
+        aras: aras,
+        multiselect: true,
+        itemtypeID: 'E582AB17663F4EF28460015B2BE9E094',
+        dialogWidth: innerWidth,
+        dialogHeight: innerHeight,
+        content: 'searchDialog.html'
+    };
+    (wnd.main || wnd).ArasModules.Dialog.show("iframe", params).promise.then(function(selectedItem) {
+        if (selectedItem.length) {
+            const identityNames = [];
+            const identityIds = [];
+            let getIdentities = aras.newIOMItem('Identity', 'get');
+            getIdentities.setAttribute("idlist", selectedItem.join(","));
+            getIdentities.setAttribute("select", "keyed_name");
+            getIdentities = getIdentities.apply();
+            if (getIdentities.isError()) {
+                return aras.AlertError("Failed to get the selected items. Please try again. " + getIdentities.getErrorString());
+            }
+            for (let i = 0; i < getIdentities.getItemCount(); i++) {
+                const getItems = getIdentities.getItemByIndex(i);
+                identityNames.push(getItems.getProperty("keyed_name"));
+                identityIds.push(getItems.getID());
+            }
+            document.getElementsByName("pmi_users")[1].value = identityNames.join("\n");
+            document.getElementsByName("pmi_users")[1].itemId = identityIds.join(",");
+        }
+    });
+};
+AddReviewers.prototype.Cancel = function() {
+    parent.args.dialog.close();
+};
+
+API = new AddReviewers();]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_AddManualReviewersAPI</name>
+ </Item>
+</AML>

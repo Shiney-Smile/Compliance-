@@ -1,0 +1,74 @@
+﻿<AML>
+ <Item type="Method" id="8EF358AD4FB34C999BEFB41E9749BF98" action="add">
+  <comments>This Method will trigger when action 'Calculate Compliance' is called.</comments>
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[
+const innovator = top.aras.newIOMInnovator(); 
+const isItemNew = aras.isNew(parent.thisItem);
+if(isItemNew)
+{
+    return aras.AlertError('Error: You can perform this Calculate Button only when the mSpec is claimed. Please unclaim to perform this action.');
+}
+const contextItem = parent.thisItem;
+const isItemLocked = contextItem.getLockStatus();
+
+if(isItemLocked === 1)
+{
+    return aras.AlertError("Cannot calculate when the Reg. Specification is claimed. Please click on 'Done' and re-trigger.");
+}
+let triggerCalcStatus = thisItem.getProperty("pmi_trigger_calc_status","");
+if(triggerCalcStatus ==="Incomplete" || triggerCalcStatus ==="")
+{
+    return aras.AlertError("Grid calculations must be completed.");
+}
+
+try
+{
+    let createCompCalOutput = contextItem.newItem("Method","pmi_CreateCompCalculationOutput");
+    createCompCalOutput.setProperty("id",contextItem.getID());
+    createCompCalOutput.setProperty("keyed_name",contextItem.getProperty("keyed_name",""));
+    createCompCalOutput.setProperty("type",contextItem.getType());
+    if(contextItem.getType() === "pmi_ComplianceReplicaBOM")
+    {
+        createCompCalOutput.setProperty("pmi_PartCode",contextItem.getProperty("pmi_part_item_code",""));
+    }
+    createCompCalOutput = createCompCalOutput.apply();
+    if(createCompCalOutput.isError())
+    {
+        return aras.AlertError("Error while creating Compliance Calculation Output." + createCompCalOutput.getErrorString());
+    }
+    const result = contextItem.apply("bre_ExecuteRulesOnDemand");
+    if(result.IsError() && !result.IsEmtpy && result.getErrorString() != "")
+    {
+        if(result.getErrorString() !== "")
+        {
+            aras.AlertError(result.getErrorString());
+        }
+        else if(result.getProperty("ErrorMessage","") !== "")
+        {
+            aras.AlertError(result.getProperty("ErrorMessage",""));   
+        }
+    }
+    else
+    {
+        let updateFlag = innovator.newItem("pmi_ComplianceReplicaBOM","edit");
+        updateFlag.setID(this.getID());
+        updateFlag.setProperty("pmi_comp_calc_status","Completed");
+        updateFlag.setProperty("doGetItem", "0");
+        updateFlag = updateFlag.apply();
+        if(updateFlag.isError())
+        {
+            return aras.AlertError("Error while updating Calculation Status Flag");
+        }
+        aras.AlertSuccess("Either no errors Found in calculations or matching Events are not found");
+    }
+}
+catch (e) 
+{
+    aras.AlertError(e.Message);
+}
+parent.onRefresh();]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_ComplianceCalculations</name>
+ </Item>
+</AML>

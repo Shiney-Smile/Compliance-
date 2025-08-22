@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="Default.Settings">
+	<!-- Database Related Information-->
+	<property name="Path.To.Baselines.Dir" overwrite="true" value="C:\v28\CLIPP\R2Baseline1208" />
+	<property name="Path.To.DB.Bak" overwrite="true" value="C:\v28\CLIPP\R2Baseline1208\R2Baseline1208.bak" />
+	<property name="Path.To.CodeTree.Zip" overwrite="true" value="C:\v28\CLIPP\R2Baseline1208\R2Baseline1208.zip" />
+	<property name="MSSQL.Server" overwrite="true" value="(local)\SQLEXPRESS" />
+	<property name="MSSQL.SA.Password" overwrite="true" value="abcd@1234" />
+	<property name="MSSQL.Innovator.Password" overwrite="true" value="abcd@1234" />
+	<property name="MSSQL.Innovator.Regular.Password" overwrite="true" value="abcd@1234" />
+	<property name="Last.Commit.Before.Current.Release" overwrite="true" value="R2Baseline1208" />
+	
+	<!-- Newly Added Property-->
+	<property name="Innovator.User" overwrite="true" value="root" />
+	<property name="Innovator.Password" overwrite="true" value="innovator" />
+	<property name="MSSQL.SA.User" overwrite="true" value="sa" />
+	<property name="Deployment.Server.Name" overwrite="true" value="localhost" />
+	<property name="Baseline.Created.From.DB" overwrite="true" value="CCR1BaselineV2" />
+
+	<!--Property To Update for Refresh-->
+	<property name="MSSQL.Database.Name" overwrite="true" value="PMIAWSCLIPP0907-PMI-CLIPP-23661" />
+	<property name="Path.To.Installed.Innovator" overwrite="true" value="C:\v28\CLIPP\instances28\PMIAWSCLIPP0907-PMI-CLIPP-23661" />
+	<property name="Name.Of.Innovator.Instance" overwrite="true" value="PMIAWSCLIPP0907-PMI-CLIPP-23661" />
+
+</project> 
