@@ -1,0 +1,58 @@
+﻿<AML>
+ <Item type="Method" id="7C1F715E5AFE4B53B74F38BBA94D15C4" action="add">
+  <comments>This method is created for showing alert messages in DLR request.</comments>
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[
+const inn = aras.newIOMInnovator();
+const contextItem = parent.thisItem;
+const pmiCode = contextItem.getProperty("pmi_code","");
+//const affectedItemType = contextItem.getPropertyAttribute("pmi_affected_item", "type");
+const affectedItemType = contextItem.getProperty("pmi_affected_item", "");
+let Type="";
+let Part=inn.newItem("Part", "get");
+Part.setAttribute('select', 'id');
+Part.setAttribute('serverEvents', '0');
+Part.setID(affectedItemType);
+Part = Part.apply();
+if(!Part.isError() && !Part.isEmpty() && Part.getItemCount() > 0)
+{
+Type = "Part";//Part.getType();
+}
+else
+{
+    let PartGroup = inn.newItem("pmi_PartGroup", "get");
+    PartGroup.setAttribute('select', 'id');
+    PartGroup.setAttribute('serverEvents', '0');
+    PartGroup.setID(affectedItemType);
+    PartGroup = PartGroup.apply();
+    Type = "pmi_PartGroup";//PartGroup.getType();
+    if(PartGroup.isError())
+    {
+    return aras.AlertError("Unable to fetch item");
+    }
+}
+const res = inn.applyMethod("pmi_TriggerDLRBuilderRequest", "<id>"+contextItem.getProperty("id","")+"</id><pmi_code>"+pmiCode+"</pmi_code><MDCode>"+contextItem.getProperty("pmi_material_disclosure","")+"</MDCode><pmi_affected_item>"+contextItem.getProperty("pmi_affected_item","")+"</pmi_affected_item><pmi_affected_itemType>"+Type+"</pmi_affected_itemType>");
+if(!res.isError()){
+    
+    aras.AlertSuccess("Executed Successfully. "+res.getProperty("newMDCode","")+" created for the request "+res.getProperty("pmi_code",""));
+    parent.onRefresh();
+}
+else
+{
+    if(res.getErrorString().includes("is more than 100"))
+    {
+        aras.AlertWarning(res.getErrorString());
+    }
+    else if(res.getErrorString().includes("in the Builder tab cannot be empty"))
+    {
+        aras.AlertWarning(res.getErrorString());
+    }
+    else
+    {
+        return aras.AlertError("Failed for the request : "+res.getErrorString());
+    }
+}]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_TriggerDLRRequestJS</name>
+ </Item>
+</AML>

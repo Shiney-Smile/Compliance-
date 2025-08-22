@@ -1,0 +1,337 @@
+﻿<AML>
+ <Item type="Workflow Map" id="11AE7109D3864A4F86CB31DCBA7E6522" action="add">
+  <description xml:lang="en">RECO Workflow</description>
+  <label xml:lang="en">RECO Workflow</label>
+  <node_bg_color>       </node_bg_color>
+  <node_label1_color>       </node_label1_color>
+  <node_label1_font />
+  <node_label2_color>       </node_label2_color>
+  <node_label2_font />
+  <node_name_color>       </node_name_color>
+  <node_name_font />
+  <node_size />
+  <process_owner keyed_name="Creator" type="Identity">
+   <Item type="Identity" action="get" select="id">
+    <name>Creator</name>
+   </Item>
+  </process_owner>
+  <transition_line_color>       </transition_line_color>
+  <transition_name_color>       </transition_name_color>
+  <transition_name_font />
+  <name>pmi_RECO_Workflow</name>
+  <Relationships>
+   <Item type="Workflow Map Activity" action="add">
+    <related_id keyed_name="Release Change" type="Activity Template">
+     <Item type="Activity Template" id="21044DED51524743B1348D922997FDA7" action="add">
+      <can_delegate>0</can_delegate>
+      <can_refuse>0</can_refuse>
+      <consolidate_ondelegate>0</consolidate_ondelegate>
+      <expected_duration>0</expected_duration>
+      <icon>../images/Delete.svg</icon>
+      <is_auto>1</is_auto>
+      <is_end>1</is_end>
+      <is_start>0</is_start>
+      <message xml:lang="en">Workflow End</message>
+      <priority>1</priority>
+      <reminder_count>0</reminder_count>
+      <reminder_interval>0</reminder_interval>
+      <timeout_duration>0</timeout_duration>
+      <wait_for_all_inputs>0</wait_for_all_inputs>
+      <wait_for_all_votes>0</wait_for_all_votes>
+      <x>813</x>
+      <y>59</y>
+      <name>Release Change</name>
+      <Relationships>
+       <Item type="Activity Template Transition" id="B0624CFB6A454799B78AE11E92761A48" action="add">
+        <controlled_itemtype keyed_name="pmi_RegulatoryChangeOrder" type="ItemType" name="pmi_RegulatoryChangeOrder">55D9C2A9B0444E25BE6994105D13F590</controlled_itemtype>
+        <event>on_activate</event>
+        <related_id keyed_name="E8BA669054F348E9911A70BC85D5B59E" type="Life Cycle Transition">E8BA669054F348E9911A70BC85D5B59E</related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="Release Change" type="Activity Template">21044DED51524743B1348D922997FDA7</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+    </related_id>
+    <sort_order>128</sort_order>
+    <source_id keyed_name="pmi_RECO_Workflow" type="Workflow Map">11AE7109D3864A4F86CB31DCBA7E6522</source_id>
+   </Item>
+   <Item type="Workflow Map Activity" action="add">
+    <related_id keyed_name="Start" type="Activity Template">
+     <Item type="Activity Template" id="C44AA91AF87B4B1490B71128BBE91A25" action="add">
+      <can_delegate>0</can_delegate>
+      <can_refuse>0</can_refuse>
+      <consolidate_ondelegate>0</consolidate_ondelegate>
+      <expected_duration>0</expected_duration>
+      <icon>../images/WorkflowStart.svg</icon>
+      <is_auto>1</is_auto>
+      <is_end>0</is_end>
+      <is_start>1</is_start>
+      <message xml:lang="en">Workflow Start</message>
+      <priority>2</priority>
+      <reminder_count>0</reminder_count>
+      <reminder_interval>0</reminder_interval>
+      <timeout_duration>0</timeout_duration>
+      <wait_for_all_inputs>0</wait_for_all_inputs>
+      <wait_for_all_votes>0</wait_for_all_votes>
+      <x>70</x>
+      <y>56</y>
+      <name>Start</name>
+      <Relationships>
+       <Item type="Workflow Map Path" id="33B38F727F3942C996DF9120D5730921" action="add">
+        <authentication>none</authentication>
+        <is_default>1</is_default>
+        <is_override>0</is_override>
+        <name>Go</name>
+        <related_id>B7C1EC5CBDEC4AA4BB3D1CDE7B9C2102</related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="Start" type="Activity Template">C44AA91AF87B4B1490B71128BBE91A25</source_id>
+        <x>0</x>
+        <y>0</y>
+       </Item>
+      </Relationships>
+     </Item>
+    </related_id>
+    <sort_order>256</sort_order>
+    <source_id keyed_name="pmi_RECO_Workflow" type="Workflow Map">11AE7109D3864A4F86CB31DCBA7E6522</source_id>
+   </Item>
+   <Item type="Workflow Map Activity" action="add">
+    <related_id keyed_name="Submit" type="Activity Template">
+     <Item type="Activity Template" id="B7C1EC5CBDEC4AA4BB3D1CDE7B9C2102" action="add">
+      <can_delegate>1</can_delegate>
+      <can_refuse>0</can_refuse>
+      <consolidate_ondelegate>0</consolidate_ondelegate>
+      <icon>../images/WorkflowNode.svg</icon>
+      <is_auto>0</is_auto>
+      <is_end>0</is_end>
+      <is_start>0</is_start>
+      <message xml:lang="en">Please Review...</message>
+      <wait_for_all_inputs>0</wait_for_all_inputs>
+      <wait_for_all_votes>0</wait_for_all_votes>
+      <x>242</x>
+      <y>58</y>
+      <name>Submit</name>
+      <Relationships>
+       <Item type="Activity Template Assignment" id="24093C8274EA4CAA83F5263829228A0C" action="add">
+        <related_id keyed_name="Owner" type="Identity">
+         <Item type="Identity" action="get" select="id">
+          <name>Owner</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="Submit" type="Activity Template">B7C1EC5CBDEC4AA4BB3D1CDE7B9C2102</source_id>
+        <is_required>0</is_required>
+        <for_all_members>0</for_all_members>
+        <voting_weight>100</voting_weight>
+       </Item>
+       <Item type="Activity Template Transition" id="C337AC65864845618D7BFB4FBC9BBCC2" action="add">
+        <controlled_itemtype keyed_name="pmi_RegulatoryChangeOrder" type="ItemType" name="pmi_RegulatoryChangeOrder">55D9C2A9B0444E25BE6994105D13F590</controlled_itemtype>
+        <event>on_activate</event>
+        <related_id keyed_name="8867F48EB32C49A8966E9303822E8FD8" type="Life Cycle Transition">8867F48EB32C49A8966E9303822E8FD8</related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="Submit" type="Activity Template">B7C1EC5CBDEC4AA4BB3D1CDE7B9C2102</source_id>
+       </Item>
+       <Item type="Workflow Map Path" id="31DF134CAC5B4B5D9129334FEDB7A2EE" action="add">
+        <authentication>none</authentication>
+        <is_default>0</is_default>
+        <is_override>0</is_override>
+        <name>Start Work</name>
+        <related_id>C96809733E014245B17B5DADCAE8EE9D</related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="Submit" type="Activity Template">B7C1EC5CBDEC4AA4BB3D1CDE7B9C2102</source_id>
+        <x>0</x>
+        <y>0</y>
+       </Item>
+      </Relationships>
+     </Item>
+    </related_id>
+    <sort_order>384</sort_order>
+    <source_id keyed_name="pmi_RECO_Workflow" type="Workflow Map">11AE7109D3864A4F86CB31DCBA7E6522</source_id>
+   </Item>
+   <Item type="Workflow Map Activity" action="add">
+    <related_id keyed_name="Submit for Review" type="Activity Template">
+     <Item type="Activity Template" id="C96809733E014245B17B5DADCAE8EE9D" action="add">
+      <can_delegate>1</can_delegate>
+      <can_refuse>0</can_refuse>
+      <consolidate_ondelegate>0</consolidate_ondelegate>
+      <icon>../images/WorkflowNode.svg</icon>
+      <is_auto>0</is_auto>
+      <is_end>0</is_end>
+      <is_start>0</is_start>
+      <message xml:lang="en">Please Review...</message>
+      <wait_for_all_inputs>0</wait_for_all_inputs>
+      <wait_for_all_votes>0</wait_for_all_votes>
+      <x>413</x>
+      <y>60</y>
+      <name>Submit for Review</name>
+      <Relationships>
+       <Item type="Activity Template Assignment" id="604526BFB147497487BC09D471E0A768" action="add">
+        <related_id keyed_name="Owner" type="Identity">
+         <Item type="Identity" action="get" select="id">
+          <name>Owner</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="Submit for Review" type="Activity Template">C96809733E014245B17B5DADCAE8EE9D</source_id>
+        <is_required>0</is_required>
+        <for_all_members>0</for_all_members>
+        <voting_weight>100</voting_weight>
+       </Item>
+       <Item type="Activity Template Transition" id="67A84BECB61C4D28A2817F40AAB2189C" action="add">
+        <controlled_itemtype keyed_name="pmi_RegulatoryChangeOrder" type="ItemType" name="pmi_RegulatoryChangeOrder">55D9C2A9B0444E25BE6994105D13F590</controlled_itemtype>
+        <event>on_activate</event>
+        <related_id keyed_name="D957ECC0A6994ABF9400D51A35219508" type="Life Cycle Transition">D957ECC0A6994ABF9400D51A35219508</related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="Submit for Review" type="Activity Template">C96809733E014245B17B5DADCAE8EE9D</source_id>
+       </Item>
+       <Item type="Activity Template Transition" id="3807169E364E4F8BBD5AF0E7D693D69A" action="add">
+        <controlled_itemtype keyed_name="pmi_RegulatoryChangeOrder" type="ItemType" name="pmi_RegulatoryChangeOrder">55D9C2A9B0444E25BE6994105D13F590</controlled_itemtype>
+        <event>on_activate</event>
+        <related_id keyed_name="6979243721E44866AFDF4A34560CF554" type="Life Cycle Transition">6979243721E44866AFDF4A34560CF554</related_id>
+        <sort_order>256</sort_order>
+        <source_id keyed_name="Submit for Review" type="Activity Template">C96809733E014245B17B5DADCAE8EE9D</source_id>
+       </Item>
+       <Item type="Workflow Map Path" id="490DEBB55554451B9464C03E2915CBCD" action="add">
+        <authentication>none</authentication>
+        <is_default>0</is_default>
+        <is_override>0</is_override>
+        <name>Submit for Approval</name>
+        <related_id>81D8CD8B57494161A3964084D9F0F1A6</related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="Submit for Review" type="Activity Template">C96809733E014245B17B5DADCAE8EE9D</source_id>
+        <x>0</x>
+        <y>0</y>
+       </Item>
+       <Item type="Workflow Map Path" id="DAFDF722686A407E9F89763CF078EFFD" action="add">
+        <authentication>none</authentication>
+        <is_default>0</is_default>
+        <is_override>0</is_override>
+        <name>Send Back to Submit</name>
+        <related_id>B7C1EC5CBDEC4AA4BB3D1CDE7B9C2102</related_id>
+        <segments>342,-18</segments>
+        <sort_order>256</sort_order>
+        <source_id keyed_name="Submit for Review" type="Activity Template">C96809733E014245B17B5DADCAE8EE9D</source_id>
+        <x>-136</x>
+        <y>-82</y>
+       </Item>
+       <Item type="Workflow Map Path" id="430C7DD6C15F45B18EA2231EF8005081" action="add">
+        <authentication>none</authentication>
+        <is_default>0</is_default>
+        <is_override>0</is_override>
+        <name>Cancel Change</name>
+        <related_id>64CC88CFDAFF43CA8396C5FCA783F7FA</related_id>
+        <sort_order>384</sort_order>
+        <source_id keyed_name="Submit for Review" type="Activity Template">C96809733E014245B17B5DADCAE8EE9D</source_id>
+        <x>-72</x>
+        <y>61</y>
+       </Item>
+      </Relationships>
+     </Item>
+    </related_id>
+    <sort_order>512</sort_order>
+    <source_id keyed_name="pmi_RECO_Workflow" type="Workflow Map">11AE7109D3864A4F86CB31DCBA7E6522</source_id>
+   </Item>
+   <Item type="Workflow Map Activity" action="add">
+    <related_id keyed_name="In Review" type="Activity Template">
+     <Item type="Activity Template" id="81D8CD8B57494161A3964084D9F0F1A6" action="add">
+      <can_delegate>1</can_delegate>
+      <can_refuse>0</can_refuse>
+      <consolidate_ondelegate>0</consolidate_ondelegate>
+      <icon>../images/WorkflowNode.svg</icon>
+      <is_auto>0</is_auto>
+      <is_end>0</is_end>
+      <is_start>0</is_start>
+      <message xml:lang="en">Please Review...</message>
+      <wait_for_all_inputs>0</wait_for_all_inputs>
+      <wait_for_all_votes>0</wait_for_all_votes>
+      <x>612</x>
+      <y>61</y>
+      <name>In Review</name>
+      <Relationships>
+       <Item type="Activity Template Assignment" id="70E4C1A99464495B84928960A1A14144" action="add">
+        <related_id keyed_name="Owner" type="Identity">
+         <Item type="Identity" action="get" select="id">
+          <name>Owner</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="In Review" type="Activity Template">81D8CD8B57494161A3964084D9F0F1A6</source_id>
+        <is_required>0</is_required>
+        <for_all_members>0</for_all_members>
+        <voting_weight>100</voting_weight>
+       </Item>
+       <Item type="Activity Template Transition" id="84F0957023E849AC8E5E4924F9AFB0DD" action="add">
+        <controlled_itemtype keyed_name="pmi_RegulatoryChangeOrder" type="ItemType" name="pmi_RegulatoryChangeOrder">55D9C2A9B0444E25BE6994105D13F590</controlled_itemtype>
+        <event>on_activate</event>
+        <related_id keyed_name="19A3964B004644A8B04C0688B4B0AEB6" type="Life Cycle Transition">19A3964B004644A8B04C0688B4B0AEB6</related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="In Review" type="Activity Template">81D8CD8B57494161A3964084D9F0F1A6</source_id>
+       </Item>
+       <Item type="Workflow Map Path" id="4CE58976E1404C2FBE2BC420BCC9ABDC" action="add">
+        <authentication>none</authentication>
+        <is_default>0</is_default>
+        <is_override>0</is_override>
+        <name>Reject Change</name>
+        <related_id>C96809733E014245B17B5DADCAE8EE9D</related_id>
+        <segments>512,158</segments>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="In Review" type="Activity Template">81D8CD8B57494161A3964084D9F0F1A6</source_id>
+        <x>-142</x>
+        <y>105</y>
+       </Item>
+       <Item type="Workflow Map Path" id="36AE299C7B8B4921B3F51D526AA3FCD3" action="add">
+        <authentication>none</authentication>
+        <is_default>0</is_default>
+        <is_override>0</is_override>
+        <name>Approve</name>
+        <related_id>21044DED51524743B1348D922997FDA7</related_id>
+        <sort_order>256</sort_order>
+        <source_id keyed_name="In Review" type="Activity Template">81D8CD8B57494161A3964084D9F0F1A6</source_id>
+        <x>0</x>
+        <y>0</y>
+       </Item>
+      </Relationships>
+     </Item>
+    </related_id>
+    <sort_order>640</sort_order>
+    <source_id keyed_name="pmi_RECO_Workflow" type="Workflow Map">11AE7109D3864A4F86CB31DCBA7E6522</source_id>
+   </Item>
+   <Item type="Workflow Map Activity" action="add">
+    <related_id keyed_name="Cancel" type="Activity Template">
+     <Item type="Activity Template" id="64CC88CFDAFF43CA8396C5FCA783F7FA" action="add">
+      <can_delegate>0</can_delegate>
+      <can_refuse>0</can_refuse>
+      <consolidate_ondelegate>0</consolidate_ondelegate>
+      <icon>../images/Delete.svg</icon>
+      <is_auto>1</is_auto>
+      <is_end>1</is_end>
+      <is_start>0</is_start>
+      <message xml:lang="en">Please Review...</message>
+      <wait_for_all_inputs>0</wait_for_all_inputs>
+      <wait_for_all_votes>0</wait_for_all_votes>
+      <x>282</x>
+      <y>151</y>
+      <name>Cancel</name>
+      <Relationships>
+       <Item type="Activity Template Transition" id="CF8B1C5648C74002B48127C06D6832F6" action="add">
+        <controlled_itemtype keyed_name="pmi_RegulatoryChangeOrder" type="ItemType" name="pmi_RegulatoryChangeOrder">55D9C2A9B0444E25BE6994105D13F590</controlled_itemtype>
+        <event>on_activate</event>
+        <related_id keyed_name="252F06BD40B44E41A4DA5FC3B6E94077" type="Life Cycle Transition">252F06BD40B44E41A4DA5FC3B6E94077</related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="Cancel" type="Activity Template">64CC88CFDAFF43CA8396C5FCA783F7FA</source_id>
+       </Item>
+       <Item type="Activity Template Transition" id="72B465A7E3744AA09C1A05864E1BF8D4" action="add">
+        <controlled_itemtype keyed_name="pmi_RegulatoryChangeOrder" type="ItemType" name="pmi_RegulatoryChangeOrder">55D9C2A9B0444E25BE6994105D13F590</controlled_itemtype>
+        <event>on_activate</event>
+        <related_id keyed_name="02018D58F6EB4BB0BA78A7D8E4599338" type="Life Cycle Transition">02018D58F6EB4BB0BA78A7D8E4599338</related_id>
+        <sort_order>256</sort_order>
+        <source_id keyed_name="Cancel" type="Activity Template">64CC88CFDAFF43CA8396C5FCA783F7FA</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+    </related_id>
+    <sort_order>768</sort_order>
+    <source_id keyed_name="pmi_RECO_Workflow" type="Workflow Map">11AE7109D3864A4F86CB31DCBA7E6522</source_id>
+   </Item>
+  </Relationships>
+ </Item>
+</AML>

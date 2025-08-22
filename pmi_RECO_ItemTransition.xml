@@ -1,0 +1,384 @@
+﻿<AML>
+ <Item type="Method" id="BEF4582B6A07461B985425A75AF962C4" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[    Innovator inn = this.getInnovator();
+    Aras.Server.Security.Identity plmIdentity = Aras.Server.Security.Identity.GetByName("Super User");
+    using (CCO.Permissions.GrantIdentity(plmIdentity))
+    {
+        string changeId = this.getID();
+        Item transitionItem = this.getPropertyItem("transition");
+        string transition = string.Empty;
+		if(transitionItem != null)
+		{
+		    transition = GetLifeCycleTransition(transitionItem);
+		}
+		if(!string.IsNullOrEmpty(transition))
+		{
+		    switch (transition)
+		    {
+			    case "New->In Work":
+			    To_InWork(changeId, inn);
+				break;
+			    case "In Work->Cancelled":
+			    To_Cancelled(changeId, inn);
+				break;
+				case "In Work->In Review":
+			    To_InReview(changeId, inn);
+				break;
+			    case "In Review->In Work":
+			    To_Rework(changeId, inn);
+				break;
+			    case "In Review->Released":
+			    To_Released(changeId, inn);
+				break;
+		    }
+		}
+    }
+    return this;
+}
+
+internal class ItemContainer 
+{
+    public string itemType {get; set;}
+    public string relId {get; set;}
+    public string itemId {get; set;}
+}
+
+private void To_InWork(string changeId, Innovator inn)
+{
+    Item affectedItem = GetAllAffectedItems(changeId, inn, null);
+    int aCount = affectedItem.getItemCount();
+    if(!affectedItem.isError() && aCount != 0)
+    {
+        List <ItemContainer> itemRecords = new List <ItemContainer>();
+        for(int aindex = 0; aindex < aCount; aindex++)
+        {
+            Item oneItem = affectedItem.getItemByIndex(aindex);
+            if(string.IsNullOrEmpty(oneItem.getProperty("new_item_state", string.Empty)))
+            {
+				ItemContainer rowData = new ItemContainer
+                {
+                    itemType = oneItem.getRelatedItem().getType(),
+                    relId = oneItem.getID(),
+					itemId = oneItem.getProperty("affected_id", string.Empty)
+                };
+                itemRecords.Add(rowData);
+            }
+        }
+        if(itemRecords.Any())
+        {
+            CreateNewVersion(itemRecords, inn);
+        }
+    }
+}
+
+private void To_Released(string changeId, Innovator inn)
+{
+    Item affectedItem = GetAllAffectedItems(changeId, inn, null);
+    int aCount = affectedItem.getItemCount();
+    if(!affectedItem.isError() && aCount != 0)
+    {
+        for(int aindex = 0; aindex < aCount; aindex++)
+        {
+            Item oneItem = affectedItem.getItemByIndex(aindex);
+            string type = oneItem.getRelatedItem().getType();
+            string tableName = type.ToUpperInvariant();
+            string itemAction = oneItem.getProperty("item_action",string.Empty);
+			string targetLifeCycle = oneItem.getProperty("pmi_target_lc");
+            if(itemAction == "Release")
+            {
+                if(!string.IsNullOrEmpty(oneItem.getProperty("new_item_id")))
+                {
+					if(targetLifeCycle == "Active")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+					if(targetLifeCycle == "Archived")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+					if(targetLifeCycle == "Under Assessment")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+					if(targetLifeCycle == "Only for TOX")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+					if(targetLifeCycle == "Deactivated")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+					if(targetLifeCycle == "Preliminary")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+                }
+            }
+            if(itemAction == "Revise")
+            {
+                if(!string.IsNullOrEmpty(oneItem.getProperty("new_item_id")))
+                {
+					if(targetLifeCycle == "Active")
+					{
+					    if(oneItem.getProperty("new_item_state") != "Active")
+        				{
+        					PromoteItem(type, oneItem.getProperty("new_item_id"), inn, "Active");
+        				}
+                        if(!string.IsNullOrEmpty(oneItem.getProperty("affected_id")))
+                        {
+                            if(oneItem.getProperty("affected_state") != "Archived")
+            				{
+            					PromoteItem(type, oneItem.getProperty("affected_id"), inn, "Archived");
+            				}
+                        }
+					}
+					if(targetLifeCycle == "Archived")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+					if(targetLifeCycle == "Under Assessment")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+					if(targetLifeCycle == "Only for TOX")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+					if(targetLifeCycle == "Deactivated")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+					if(targetLifeCycle == "Preliminary")
+					{
+					    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, targetLifeCycle);
+					}
+                }
+            }
+        }
+    }
+}
+
+private void To_Cancelled(string changeId, Innovator inn)
+{
+    Item affectedItem = GetAllAffectedItems(changeId, inn, "Revise");
+    int aCount = affectedItem.getItemCount();
+    if(!affectedItem.isError() && aCount != 0)
+    {
+        for(int aindex = 0; aindex < aCount; aindex++)
+        {
+            Item oneItem = affectedItem.getItemByIndex(aindex);
+            string type = oneItem.getRelatedItem().getType();
+            string tableName = type.ToUpperInvariant();
+			string itemAction = oneItem.getProperty("item_action");
+            if (!string.IsNullOrEmpty(oneItem.getProperty("new_item_id")) && oneItem.getProperty("new_item_state") == "Preliminary")
+            {
+                string currentItemType = oneItem.getRelatedItem().getType();
+                Item currentItem = inn.getItemById(currentItemType, oneItem.getProperty("new_item_id"));
+                Item releasedItem = inn.getItemById(currentItemType, oneItem.getProperty("affected_id"));
+    	        string sQuery = string.Format(@"UPDATE [innovator].[pmi_RECO_AffectedItem] SET new_item_id = '' WHERE new_item_id = '{0}'", currentItem.getID());
+		        inn.applySQL(sQuery);
+	            string currentRevision = currentItem.getProperty("major_rev",""); 
+	            string releasedRevision = releasedItem.getProperty("major_rev",""); 
+	            string configId = oneItem.getRelatedItem().getProperty("config_id", "");
+                string sqlQuery = string.Format(@"select id, config_id, major_rev, generation from {0} where config_id='{1}' and state='Preliminary' and major_rev = '{2}' order by generation desc", currentItemType, configId, currentRevision);
+	            Item results = inn.applySQL(sqlQuery);
+				int resultCount = results.getItemCount();
+                for (int queryIndex = 0; queryIndex < resultCount; queryIndex++)
+	            {
+		            Item singleItem = results.getItemByIndex(queryIndex);
+		            Item purgeItem = inn.newItem(currentItemType, "purge");
+		            purgeItem.setProperty("config_id", singleItem.getProperty("config_id", ""));
+		            purgeItem.setProperty("major_rev", singleItem.getProperty("major_rev",""));
+		            purgeItem.setProperty("generation", singleItem.getProperty("generation", ""));
+		            purgeItem.setID(singleItem.getID());
+		            purgeItem = purgeItem.apply();
+		            if(purgeItem.isError())
+		            {
+			            throw new InvalidOperationException("Error removing the new draft version of the item " +purgeItem.getErrorString());
+		            }
+	            }
+	        }
+        }
+    }
+}
+
+private void To_InReview(string changeId, Innovator inn)
+{
+    Item affectedItem = GetAllAffectedItems(changeId, inn, null);
+    int aCount = affectedItem.getItemCount();
+    if(!affectedItem.isError() && aCount != 0)
+    {
+        for(int aindex = 0; aindex < aCount; aindex++)
+        {
+            Item oneItem = affectedItem.getItemByIndex(aindex);
+            string type = oneItem.getRelatedItem().getType();
+            string targetLifeCycle = oneItem.getProperty("pmi_target_lc", string.Empty);
+            if(targetLifeCycle == "Active" && type == "pmi_MaterialDisclosure")
+			{
+				Item result = CheckValidation(changeId, affectedItem, inn);
+				string applyResult = result.getResult();
+				if (!applyResult.Equals("Success", StringComparison.CurrentCultureIgnoreCase))
+				{
+					throw new InvalidOperationException(applyResult);
+				}
+			}
+            if(!string.IsNullOrEmpty(oneItem.getProperty("new_item_id")))
+            {
+				if(oneItem.getProperty("new_item_state") != "In Review")
+				{
+					PromoteItem(type, oneItem.getProperty("new_item_id"), inn, "In Review");
+				}
+            }
+            Item currentItem = inn.getItemById(type, oneItem.getProperty("new_item_id"));
+            int currentRevision = int.Parse(currentItem.getProperty("major_rev", string.Empty));
+            if (currentRevision > 1) 
+            {
+                Item releasedItem = inn.getItemById(type, oneItem.getProperty("affected_id"));
+                int releasedRevision = int.Parse(releasedItem.getProperty("major_rev", string.Empty));
+                if ((currentRevision > releasedRevision) && targetLifeCycle == "Archived") 
+                {
+                    PromoteItem(type, oneItem.getProperty("new_item_id"), inn, "Active");
+                }
+            }
+        }
+    }
+}
+
+private void To_Rework(string changeId, Innovator inn)
+{
+    Item affectedItem = GetAllAffectedItems(changeId, inn, null);
+    int aCount = affectedItem.getItemCount();
+    if(!affectedItem.isError() && aCount != 0)
+    {
+        for(int aindex = 0; aindex < aCount; aindex++)
+        {
+            Item oneItem = affectedItem.getItemByIndex(aindex);
+            if(!string.IsNullOrEmpty(oneItem.getProperty("new_item_state")))
+            {
+                if(oneItem.getProperty("new_item_state") != "Preliminary")
+                {
+                    PromoteItem(oneItem.getRelatedItem().getType(), oneItem.getProperty("new_item_id"), inn, "Preliminary");
+                }
+            }
+        }
+    }
+}
+
+private Item CheckValidation (string changeId, Item affectedItem, Innovator inn)
+{
+    int aCount = affectedItem.getItemCount();
+    StringBuilder errorMsgBuilder = new StringBuilder();
+    for(int aindex = 0; aindex < aCount; aindex++)
+    {
+        List<string> paramError = new List<string>();
+        List<string> paramState = new List<string>();
+        Item oneItem = affectedItem.getItemByIndex(aindex);
+        string itemType = oneItem.getRelatedItem().getType();
+        if(itemType.Equals("pmi_MaterialDisclosure"))
+        {
+            Item getParamItem = inn.newItem("pmi_MaterialDisclr_Substance", "get");
+            getParamItem.setProperty("source_id", oneItem.getProperty("new_item_id"));
+            getParamItem.setAttribute("select", "id,related_id(pmi_name,state)");
+            getParamItem = getParamItem.apply();
+            
+            if(!getParamItem.isError() && getParamItem.getItemCount() > 0)
+            {
+                int paramCount = getParamItem.getItemCount();
+                for(int count = 0; count < paramCount; count++)
+                {
+                    Item paramItem = getParamItem.getItemByIndex(count);
+                    if(paramItem.getRelatedItem().getProperty("state") == "Only for TOX" || paramItem.getRelatedItem().getProperty("state") == "Deactivated")
+                    {
+                        paramError.Add(paramItem.getRelatedItem().getProperty("pmi_name"));
+                        paramState.Add(paramItem.getRelatedItem().getProperty("state"));
+                    }    
+                }
+            }
+                
+            if(paramError.Any())
+            {
+                string output = "Substance "+string.Join(", ", paramError.ToArray())+" is in "+string.Join(", ", paramState.ToArray())+" Lifecycle phase for Material Disclosure "+oneItem.getRelatedItem().getProperty("keyed_name")+"\n";
+                errorMsgBuilder.AppendLine(output);
+            }
+        }
+    }
+    if (!string.IsNullOrEmpty(errorMsgBuilder.ToString()))
+    {
+        return inn.newResult(errorMsgBuilder.ToString());
+    }
+    else
+    {
+        return inn.newResult("Success");
+    }
+}
+
+private Item GetAllAffectedItems (string changeId, Innovator inn, string getType)
+{
+    Item affectedItem = inn.newItem("pmi_RECO_AffectedItem", "get");
+    affectedItem.setProperty("source_id", changeId);
+    affectedItem.setAttribute("select", "id, affected_id, affected_state, new_item_id, new_item_state, pmi_target_lc, related_id, item_action");
+    affectedItem.setAttribute("serverEvents", "0");
+    if(!string.IsNullOrEmpty(getType))
+    {
+        affectedItem.setProperty("affected_id", "");
+        affectedItem.setPropertyCondition("affected_id", "is not null");
+    }
+    affectedItem = affectedItem.apply();
+    return affectedItem;
+}
+
+private void CreateNewVersion (List <ItemContainer> itemRecords, Innovator inn)
+{
+    foreach(var oneRecord in itemRecords)
+    {
+        string type = oneRecord.itemType;
+        Item versionItem = inn.newItem(oneRecord.itemType, "version");
+	    versionItem.setAttribute("id", oneRecord.itemId);
+	    versionItem = versionItem.apply();
+	    if (versionItem.isError())
+        {
+            throw new InvalidOperationException("Error creating the new version: "+versionItem.getErrorString());
+        }
+        UnlockItem(versionItem);
+        Item updateItem = inn.newItem("pmi_RECO_AffectedItem", "edit");
+	    updateItem.setID(oneRecord.relId);
+	    updateItem.setProperty("new_item_id", versionItem.getID());
+	    updateItem = updateItem.apply();
+	    if (updateItem.isError())
+        {
+            throw new InvalidOperationException("Error creating the new version: "+updateItem.getErrorString());
+        }
+    }
+}
+    
+private string GetLifeCycleTransition (Item transitionItem)
+{
+    string toState = transitionItem.getPropertyAttribute("to_state", "keyed_name", "");
+    string fromState = transitionItem.getPropertyAttribute("from_state", "keyed_name", "");
+    return string.Format(CultureInfo.InvariantCulture, "{0}->{1}", fromState, toState);
+}
+
+private void UnlockItem (Item unlockItem)
+{
+    if(unlockItem.getLockStatus() == 1)
+    {
+        unlockItem.setAction("unlock");
+        unlockItem = unlockItem.apply();
+	    if (unlockItem.isError())
+        {
+            throw new InvalidOperationException("Error creating the new version: "+unlockItem.getErrorString());
+        }
+    }
+}
+
+private void PromoteItem (string itemType, string itemId, Innovator inn, string nextStatus)
+{
+    Item promoteItem = inn.newItem(itemType);
+	promoteItem.setID(itemId);
+	promoteItem.promote(nextStatus, "Promote Template Item");
+]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_RECO_ItemTransition</name>
+ </Item>
+</AML>

@@ -1,0 +1,98 @@
+﻿<AML>
+ <Item type="Method" id="C00487FEC2B74C0A8FD79B543363426E" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[Innovator inn = this.getInnovator();
+string LogGroupVariableValue = CCO.Utilities.GetVarValue("pmi_AwsTargetLogGroup", null);
+if( string.IsNullOrEmpty(LogGroupVariableValue) )
+{
+    return inn.newError("Unable to get AWS Log Group Variable. Please contact Administrator.");
+}
+awsTarget.LogGroup = LogGroupVariableValue;
+LogManager.Configuration = config;
+var mainLogger = NLog.LogManager.GetCurrentClassLogger();
+Aras.Server.Security.Identity plmIdentity = Aras.Server.Security.Identity.GetByName("Aras PLM");
+IDisposable elevatePermission = CCO.Permissions.GrantIdentity(plmIdentity);
+string itemType = this.getType();
+string itemId = this.getID();    
+if(itemType == "pmi_RECO_AffectedItem")
+{
+    itemType = itemType.Replace ("ECO_AffectedItem", "egulatoryChangeOrder");
+    itemId = this.getProperty("source_id", string.Empty);
+}
+Item changeItem = inn.newItem(itemType, "get");
+Item changeAffectedItem = inn.newItem("pmi_RECO_AffectedItem", "get");
+changeItem.setID(itemId);
+changeItem.addRelationship(changeAffectedItem);
+changeItem.setAttribute("select", "id");
+changeAffectedItem.setAttribute("select", "related_id(config_id),new_item_rev,affected_id,affected_rev,new_item_id,item_action");
+if(this.getType() == "pmi_RECO_AffectedItem")
+{
+    changeAffectedItem.setID(this.getID());
+}
+changeItem = changeItem.apply();
+if(changeItem.isError())
+{
+    return this;
+}
+changeAffectedItem = changeItem.getItemsByXPath("//Item/Relationships/Item");
+int noOfAffectedItems = changeAffectedItem.getItemCount();
+for(int index = 0; index < noOfAffectedItems; index++)
+{
+    Item oneAffectedItem = changeAffectedItem.getItemByIndex(index);
+    string newItemId = oneAffectedItem.getProperty("new_item_id", string.Empty);
+    if(string.IsNullOrEmpty(newItemId) || oneAffectedItem.getProperty("item_action",string.Empty) == "Release")
+    {
+        return this;
+    }
+    Item relatedItem = oneAffectedItem.getRelatedItem();
+    string currentItemType = relatedItem.getType();
+    string currentRevision = oneAffectedItem.getProperty("new_item_rev", string.Empty);
+    string releasedRevision = oneAffectedItem.getProperty("affected_rev", string.Empty);
+    string configId = relatedItem.getProperty("config_id", string.Empty);
+    oneAffectedItem.setAction("edit");
+    oneAffectedItem.setProperty("new_item_id","");
+    oneAffectedItem.setPropertyCondition("new_item_id","is null");
+    oneAffectedItem = oneAffectedItem.apply();
+    if(oneAffectedItem.isError())
+    {
+        mainLogger.Error("MethodName : pmi_RECO_BeforeDelete \n Message: Error removing the new item from the affected item: "+oneAffectedItem.getErrorString());
+        return inn.newError("Error removing the new item from the affected item " +oneAffectedItem.getErrorString());
+    }
+    string sqlQuery = string.Format(@"select id, config_id, major_rev, generation from {0} where config_id='{1}' and state='Preliminary' and major_rev = '{2}' order by generation desc", currentItemType, configId, currentRevision);
+    Item results = inn.applySQL(sqlQuery);
+	int resultCount = results.getItemCount();
+    for (int queryIndex = 0; queryIndex < resultCount; queryIndex++)
+	{
+		Item singleItem = results.getItemByIndex(queryIndex);
+		Item purgeItem = inn.newItem(currentItemType, "purge");
+		purgeItem.setProperty("config_id", singleItem.getProperty("config_id", ""));
+		purgeItem.setProperty("major_rev", singleItem.getProperty("major_rev",""));
+		purgeItem.setProperty("generation", singleItem.getProperty("generation", ""));
+		purgeItem.setID(singleItem.getID());
+		purgeItem = purgeItem.apply();
+		if(purgeItem.isError())
+		{
+			mainLogger.Error("MethodName : pmi_RECO_BeforeDelete \n Message: Error removing the new draft version of the item: "+purgeItem.getErrorString());
+			return inn.newError("Error removing the new draft version of the item " +purgeItem.getErrorString());
+		}
+	}
+	string historyComments  = "Draft version created & rolled back in change: "+this.getProperty("pmi_item_number","")+ " Revision Changed: "+currentRevision+ "  >  " +releasedRevision;
+    Item method = inn.newItem("Method", "pmi_CreateHistoryInformaton");
+    method.setProperty("historyAction", "Rollback");
+    method.setProperty("itemId", relatedItem.getID());
+    method.setProperty("itemType", relatedItem.getType());
+    method.setProperty("historyComments", historyComments);
+    method.setProperty("createHistoryContainer", "true");
+    method = method.apply();
+    if(method.isError())
+    {
+        mainLogger.Error("MethodName : pmi_ECOCancelScenario \n Message: Error creating the history information: "+method.getErrorString());
+        return inn.newError("Error creating the history information "+method.getErrorString());
+    }
+}
+elevatePermission?.Dispose();
+return this;]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_RECO_BeforeDelete</name>
+ </Item>
+</AML>

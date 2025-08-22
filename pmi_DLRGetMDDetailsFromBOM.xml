@@ -1,0 +1,70 @@
+﻿<AML>
+ <Item type="Method" id="4E2A602E817E479198A2C97D96BB7DAE" action="add">
+  <comments>This method is created for getting MD number and MD revision based on BOM Component in DLR</comments>
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[
+Innovator innovator = this.getInnovator();
+
+Item getItem = innovator.newItem("pmi_DiscBuilder","get");
+getItem.setProperty("source_id", this.getProperty("id"));
+getItem.setAttribute("select", "id, pmi_casnumber, pmi_part_code, pmi_quantity");
+getItem = getItem.apply();
+int itemCount = getItem.getItemCount();
+if(!getItem.isError() && !getItem.isEmpty() && itemCount > 0)
+{
+         for(var index = 0; index < itemCount; index+=1)
+        {	  
+            string partID = getItem.getItemByIndex(index).getProperty("pmi_part_code","");
+            string id = getItem.getItemByIndex(index).getProperty("id","");
+           
+           if(!IsNullOrEmpty(partID))
+           {
+               string configIdOfPart = getConfigIdOfPart(innovator,partID);
+                Item getMDDetails = innovator.applySQL(string.Format(@"select top 1 md.id, md.PMI_ITEMCODE, md.major_rev from innovator.PMI_MATERIALDISCLOSURE md WITH(NOLOCK)
+                join innovator.pmi_MDPartGroup mdPartGrp WITH(NOLOCK) on md.id=mdPartGrp.SOURCE_ID
+                join innovator.pmi_PartGroup_Part_Rel prtGrpRel WITH(NOLOCK) on prtGrpRel.SOURCE_ID=mdPartGrp.RELATED_ID
+                join innovator.part part WITH(NOLOCK) on part.id=prtGrpRel.RELATED_ID
+                where part.config_id='{0}' and md.IS_CURRENT=1
+                union
+                select top 1 md.id, md.PMI_ITEMCODE, md.major_rev from innovator.PMI_MATERIALDISCLOSURE md WITH(NOLOCK)
+                join innovator.pmi_MaterialDisclosurePart mdPart WITH(NOLOCK) on md.id=mdPart.SOURCE_ID
+                join innovator.part part WITH(NOLOCK) on part.id=mdPart.RELATED_ID
+                where part.config_id='{0}' and md.IS_CURRENT=1",configIdOfPart));
+            
+            int getMDCount = getMDDetails.getItemCount();
+            if(!getMDDetails.isError() && !getMDDetails.isEmpty() && getMDCount > 0)
+            {
+                Item setMDItem = innovator.newItem("pmi_DiscBuilder","edit");
+                setMDItem.setID(id);
+                setMDItem.setProperty("pmi_part_code", partID);
+                setMDItem.setProperty("source_id", this.getProperty("id"));
+                setMDItem.setProperty("pmi_mdnumber",getMDDetails.getProperty("pmi_itemcode",""));
+                setMDItem.setProperty("pmi_mdrevision",getMDDetails.getProperty("major_rev",""));
+                setMDItem = setMDItem.apply();
+            }
+            else
+            {
+                 return innovator.newError("In Builder Tab: Added Bom component "+getItem.getItemByIndex(index).getPropertyAttribute("pmi_part_code","keyed_name")+" doesn't have any material disclosure attached.");
+            }
+           }
+        }
+}
+return this;
+string getConfigIdOfPart(Innovator inn, string partId)
+{
+    string configId = "";
+    Item getConfigId = inn.newItem("Part", "get");
+    getConfigId.setID(partId);
+    getConfigId.setAttribute("select","config_id");
+    getConfigId.setAttribute("serverEvents", "0");
+    getConfigId = getConfigId.apply();
+    if(!getConfigId.isError() && !getConfigId.isEmpty() && getConfigId.getItemCount() > 0)
+    {
+        configId = getConfigId.getProperty("config_id","");
+    }
+    return configId;
+}]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_DLRGetMDDetailsFromBOM</name>
+ </Item>
+</AML>

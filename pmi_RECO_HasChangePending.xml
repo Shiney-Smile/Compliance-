@@ -1,54 +1,184 @@
 ﻿<AML>
- <Item type="SQL" id="11BE5305168C4FF597811A8079E09B9D" action="add">
-  <execution_flag>immediate</execution_flag>
-  <old_name>pmi_RECO_HasChangePending</old_name>
-  <sqlserver_body><![CDATA[create procedure pmi_RECO_HasChangePending(@itemTypeNameDbName nvarchar(32), @itemID char(32), @ignoreAffectedItemID char(32))
-AS              
-BEGIN
-	DECLARE @pendingChangesCounter int
-	
-	IF @itemTypeNameDbName IS NULL OR @itemTypeNameDbName = '' BEGIN
-		SET @itemTypeNameDbName = '[' +
-			(
-			select instance_data from [ITEMTYPE] where ID = 
-				(
-				select itemtype from [pmi_RECO_PolyItem] where ID = @itemID
-				)
-			) + ']'
-	END
-			
-	SET @pendingChangesCounter =
-	(
-	select COUNT(ai.ID) from [pmi_RECO_AffectedItem] ai 
-	where 
-		(
-		ai.AFFECTED_ID = @itemID
-		OR 
-		ai.NEW_ITEM_ID = @itemID
-		)
-		AND
-		ai.id <> @ignoreAffectedItemID
-		AND
-		(
-		EXISTS(select eeco.id from [pmi_RegulatoryChangeOrder] eeco where eeco.id = (select SOURCE_ID from [pmi_RECO_AffectedItem] where ID = ai.id) AND (eeco.STATE <> N'Released' AND eeco.STATE <> N'Cancelled' OR eeco.STATE IS NULL)))
-	)
-	DECLARE @SQLstr nvarchar(500)
-	DECLARE @ParmDefinition nvarchar(500);
-	SET @ParmDefinition = N'@id char(32), @count int';
-
-	SET @SQLstr = N'UPDATE ' + @itemTypeNameDbName + ' 
-	SET HAS_CHANGE_PENDING = CASE 
-		WHEN @count > 0 
-			THEN ''1''
-			ELSE ''0'' 
-		END
-	WHERE ID=@id';
-  
-	EXECUTE sp_executesql @SQLstr, @ParmDefinition, @id=@itemID, @count=@pendingChangesCounter
-END]]></sqlserver_body>
-  <stale>0</stale>
-  <transform_first>0</transform_first>
-  <type>procedure</type>
+ <Item type="Method" id="43832B6215E44CADB2AAC0E27A79E47C" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[Innovator inn = this.getInnovator();
+string LogGroupVariableValue = CCO.Utilities.GetVarValue("pmi_AwsTargetLogGroup", null);
+if( string.IsNullOrEmpty(LogGroupVariableValue) )
+{
+    return inn.newError("Unable to get AWS Log Group Variable. Please contact Administrator.");
+}
+awsTarget.LogGroup = LogGroupVariableValue;
+LogManager.Configuration = config;
+var mainLogger = NLog.LogManager.GetCurrentClassLogger();
+Aras.Server.Security.Identity plmIdentity = Aras.Server.Security.Identity.GetByName("Aras PLM");
+using (CCO.Permissions.GrantIdentity(plmIdentity))
+{
+	Action<string,IEnumerable<string>,string> execUpdateFlag = (itemType,idList,ignoredAffItemID) => 
+	{
+		String itemTypeDbName = String.Empty;
+		if (!String.IsNullOrEmpty(itemType))
+		{
+			itemTypeDbName = CCO.DB.GenerateTableName(itemType);
+		}
+		Aras.Server.Core.InnovatorDatabase conn = CCO.DB.InnDatabase;
+		foreach (String itemID in idList)
+		{
+			string sqlQueryFormat = "exec pmi_RECO_HasChangePending '" + itemTypeDbName + "','" + itemID + "','" + ignoredAffItemID + "'";
+			Item res = this.getInnovator().applySQL(sqlQueryFormat);
+			conn.ExecuteSQL(sqlQueryFormat);
+		}
+	};
+	string thisType = this.getType();
+	List<String> itemIDs = new List<String>();
+	string itemTypeName = String.Empty;
+	string ignoredAffectedItemID = String.Empty;
+	Item affectedItem = null;
+	switch(thisType)
+	{
+		case "pmi_MaterialDisclosure":
+		case "pmi_RegulationId":
+		case "pmi_RegulatorySpec":
+		case "pmi_Substance":
+		case "pmi_ProductIngredientReport":
+		case "pmi_LabDiscovery":
+		case "pmi_Toxocology Spec": 
+			var nonUserInputTableName = new Dictionary<string, string>()
+			{
+				{"PMI_MATERIALDISCLOSURE", "pmi_MaterialDisclosure"}, {"PMI_REGULATIONID", "pmi_RegulationId"}, {"PMI_REGULATORYSPEC", "pmi_RegulatorySpec"}, {"PMI_SUBSTANCE", "pmi_Substance"},{"PMI_PRODUCTINGREDIENTREPORT", "pmi_ProductIngredientReport"},{"PMI_LABDISCOVERY", "pmi_LabDiscovery"},{"PMI_TOXOCOLOGY SPEC", "pmi_Toxocology Spec"}
+			};
+			string thisTypeTable = nonUserInputTableName[thisType.ToUpperInvariant()];
+			string tableName = CCO.DB.GenerateTableName(thisTypeTable);
+			Aras.Server.Core.InnovatorDatabase conn = CCO.DB.InnDatabase;
+			string configId = this.getProperty("config_id");
+			if (string.IsNullOrEmpty(configId))
+			{
+				return this;
+			}
+			Aras.Server.Core.GuidModule.IsIdValid(configId, true);
+			string sqlQuery = "SELECT TOP(1) id FROM [INNOVATOR]." + tableName + " WHERE IS_CURRENT = '1' AND config_id = '" + conn.QuoteValue(configId) + "'";
+			Aras.Server.Core.InnovatorDataSet result = conn.ExecuteSelectCommand(sqlQuery);
+			if (result.RowsNumber == 0)
+			{
+				const string errorString = "Item last version is not found.";
+				const string errorDetail = "config_id = '{0}'";
+				Item errorItem = this.getInnovator().newError(errorString);
+				errorItem.setErrorDetail(string.Format(errorDetail,this.getProperty("config_id")));
+				return errorItem;
+			}
+			itemIDs.Add(result["id"].ToString());
+			itemTypeName = thisType;
+		break;
+		case "pmi_RECO_AffectedItem":
+		{
+		    	affectedItem = this.getItemsByXPath("/Item[@type='pmi_RECO_AffectedItem' and new_item_id and affected_id]");
+			if(affectedItem.node == null)
+			{ 
+				if(this.getAction() != "delete")
+				{
+					Aras.Server.Core.InnovatorDatabase dbconn = CCO.DB.InnDatabase;
+					string itemTypeDbName = CCO.DB.GenerateTableName("pmi_RECO_AffectedItem");
+					string affectedItemId = this.getID();
+					Aras.Server.Core.GuidModule.IsIdValid(affectedItemId, true);
+					string sqlQuerySelect = "SELECT TOP(1) affected_id,new_item_id FROM [INNOVATOR]." + itemTypeDbName + " WHERE id = '" + dbconn.QuoteValue(affectedItemId) + "'";
+					Aras.Server.Core.InnovatorDataSet rs = dbconn.ExecuteSelectCommand(sqlQuerySelect);
+					if (rs.RowsNumber == 0)
+					{
+						const string errorString = "Affected Item is not found.";
+						const string errorDetail = "id = '{0}'";
+						Item errorItem = this.getInnovator().newError(errorString);
+						errorItem.setErrorDetail(string.Format(errorDetail,affectedItemId));
+						return errorItem;
+					}
+					affectedItem = this.newItem("pmi_RECO_AffectedItem","");
+					affectedItem.setID(affectedItemId);
+					affectedItem.setProperty("affected_id",rs["affected_id"].ToString());
+					affectedItem.setProperty("new_item_id",rs["new_item_id"].ToString());
+				}
+				else
+				{
+					affectedItem = this;
+				}
+			}
+		break;
+		}
+		case "pmi_RegulatoryChangeOrder":
+		{		
+			Dictionary<string, string> relationships = new Dictionary<string, string>()
+			{
+				{"pmi_RegulatoryChangeOrder", "pmi_RECO_AffectedItem"}
+			};
+			string relshipType = relationships[thisType];
+			Item relshipItemList = this.newItem(relshipType, "get");
+			relshipItemList.setProperty("source_id", this.getID());
+			relshipItemList = relshipItemList.apply();
+			int relshipItemCount = relshipItemList.getItemCount();
+			if(relshipItemCount < 0)
+			{
+				return relshipItemList;
+			}
+			for(int i = 0; i < relshipItemCount; i++)
+			{
+				Item relshipItem = relshipItemList.getItemByIndex(i);
+				relshipItem.setAction("pmi_RECO_HasChangePending");
+				relshipItem = relshipItem.apply();
+			}
+			return this;
+		}
+	}
+	if(affectedItem != null)
+	{
+		string idlistAttr = affectedItem.getAttribute("idlist","");
+		string[] idlist;
+		if (string.IsNullOrEmpty(idlistAttr))
+		{
+			idlist = new string[]{affectedItem.getID()};
+		}
+		else
+		{
+			idlist = idlistAttr.Split(',');
+		}
+		string execute_action = affectedItem.getAttribute("action", "");
+		if(execute_action == "edit" || execute_action == "update" || execute_action == "delete")
+		{
+			foreach(string id in idlist)
+			{
+				List<string> itemIdList = new List<string>();
+				Aras.Server.Core.InnovatorDatabase conn = CCO.DB.InnDatabase;
+				string itemTypeDbName = CCO.DB.GenerateTableName("pmi_RECO_AffectedItem");
+				Aras.Server.Core.GuidModule.IsIdValid(id, true);
+				string sqlQuery = "SELECT TOP(1) affected_id,new_item_id FROM [INNOVATOR]." + itemTypeDbName + " WHERE id = '" + conn.QuoteValue(id) + "'";
+				Aras.Server.Core.InnovatorDataSet result = conn.ExecuteSelectCommand(sqlQuery);
+				if (result.RowsNumber == 0)
+				{
+					const string errorString = "Affected Item is not found.";
+					const string errorDetail = "id = '{0}'";
+					Item errorItem = this.getInnovator().newError(errorString);
+					errorItem.setErrorDetail(string.Format(errorDetail,id));
+					return errorItem;
+				}
+				itemIdList.Add(result["affected_id"].ToString());
+				itemIdList.Add(result["new_item_id"].ToString());
+				ignoredAffectedItemID = id;
+				execUpdateFlag(itemTypeName,itemIdList,ignoredAffectedItemID);
+			}
+		}
+		else
+		{
+			List<string> itemIdList = new List<string>();
+			itemIdList.Add(affectedItem.getProperty("affected_id",""));
+			itemIdList.Add(affectedItem.getProperty("new_item_id",""));
+			ignoredAffectedItemID = "";
+			execUpdateFlag(itemTypeName,itemIdList,ignoredAffectedItemID);
+		}
+	}
+	if(itemIDs.Count != 0)
+	{
+		execUpdateFlag(itemTypeName,itemIDs,ignoredAffectedItemID);
+		return this; 
+	}
+}
+return this;]]></method_code>
+  <method_type>C#</method_type>
   <name>pmi_RECO_HasChangePending</name>
  </Item>
 </AML>

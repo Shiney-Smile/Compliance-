@@ -1,0 +1,299 @@
+﻿<AML>
+ <Item type="Method" id="00F9993F30F940779FDB8FDEE23F9BB8" action="add">
+  <comments>This method is for creating the material disclosure from the DLR builder requiest.</comments>
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[Innovator innovator = this.getInnovator();
+
+ string AffectedItem = this.getProperty("pmi_affected_item",string.Empty);
+ string AffectedItemType =  this.getProperty("pmi_affected_itemType",string.Empty);
+ if(!IsNullOrEmpty(AffectedItem))
+ {
+Item getItem = innovator.newItem("pmi_DiscBuilder","get");
+getItem.setProperty("source_id", this.getProperty("id"));
+getItem.setAttribute("select", "pmi_casnumber, pmi_part_code, pmi_quantity");
+getItem = getItem.apply();
+int itemCount = getItem.getItemCount();
+if(!getItem.isError() && !getItem.isEmpty() && itemCount > 0)
+{
+        Item getErrorMessage = CheckTotalQuantityPercentage(getItem);
+        if(getErrorMessage.isError())
+        {
+            return innovator.newError(getErrorMessage.getErrorString());
+        }
+        List<Tuple<string,string,string>> substanceIds = new List<Tuple<string,string,string>>();
+        List<Tuple<string,string,string>> finalSubstances = new List<Tuple<string,string,string>>();
+        
+        for(var index = 0; index < itemCount; index+=1)
+        {	  
+            string partID = getItem.getItemByIndex(index).getProperty("pmi_part_code","");
+            string quantity = getItem.getItemByIndex(index).getProperty("pmi_quantity","");
+            string substId = getItem.getItemByIndex(index).getProperty("pmi_casnumber","");
+            
+            if(IsNullOrEmpty(quantity))
+            {
+                return innovator.newError("Quantity field in the Builder tab cannot be empty");
+            }
+            if(!IsNullOrEmpty(partID))
+            {
+                string configIdOfPart = getConfigIdOfPart(innovator,partID);
+                Item getSubstance = innovator.applySQL(string.Format(@"select sub.PMI_CASNUMBER, sub.PMI_NAME,  ms.PMI_DISCLOSED_PERCENTAGE, md.id, ms.RELATED_ID 
+                 from innovator.PMI_MATERIALDISCLOSURE md WITH(NOLOCK)
+                 join innovator.PMI_MATERIALDISCLR_SUBSTANCE ms WITH(NOLOCK) on md.id=ms.SOURCE_ID
+                 join innovator.PMI_SUBSTANCE sub WITH(NOLOCK) on sub.id=ms.RELATED_ID
+                 join innovator.PMI_MATERIALDISCLOSUREPART mp WITH(NOLOCK) on md.id=mp.SOURCE_ID
+                 join innovator.part part WITH(NOLOCK) on part.id=mp.RELATED_ID
+                 where part.config_id='{0}' and md.IS_CURRENT=1
+                 union
+                 select sub.PMI_CASNUMBER, sub.PMI_NAME,  ms.PMI_DISCLOSED_PERCENTAGE, md.id, ms.RELATED_ID
+                 from innovator.PMI_MATERIALDISCLOSURE md WITH(NOLOCK)
+                 join innovator.PMI_MATERIALDISCLR_SUBSTANCE ms WITH(NOLOCK) on md.id=ms.SOURCE_ID
+                 join innovator.PMI_SUBSTANCE sub WITH(NOLOCK) on sub.id=ms.RELATED_ID
+                 join innovator.pmi_MDPartGroup mdPartGrp WITH(NOLOCK) on md.id=mdPartGrp.SOURCE_ID
+                 join innovator.pmi_PartGroup_Part_Rel prtGrpRel WITH(NOLOCK) on prtGrpRel.SOURCE_ID=mdPartGrp.RELATED_ID
+                 join innovator.part part WITH(NOLOCK) on part.id=prtGrpRel.RELATED_ID
+                 where part.config_id='{0}' and md.IS_CURRENT=1",configIdOfPart));
+            
+            int itemSubCount = getSubstance.getItemCount();
+            if(!getSubstance.isError() && !getSubstance.isEmpty() && itemSubCount > 0)
+            {
+                for(int i = 0; i < itemSubCount; i++)
+                {
+                    Item getItemByIndex = getSubstance.getItemByIndex(i);
+                    string RelatedID = getItemByIndex.getProperty("related_id","");
+                    string disclosedpercentage = getItemByIndex.getProperty("pmi_disclosed_percentage","");
+                    string newquantity = (((float.Parse(disclosedpercentage)) * (float.Parse(quantity == ""? "0" : quantity)) / 100)).ToString();
+                    
+                    substanceIds.Add(Tuple.Create(RelatedID, newquantity, partID));
+                }
+            }
+            else
+            {
+               return innovator.newError("In Builder Tab: Added Bom component "+getItem.getItemByIndex(index).getPropertyAttribute("pmi_part_code","keyed_name")+" doesn't have any material disclosure attached.");
+            }
+        }
+                
+            if(!IsNullOrEmpty(substId))
+            {
+                substanceIds.Add(Tuple.Create(substId.Trim(), quantity == "" ? "0" : quantity, ""));
+            }
+        }
+        if(substanceIds.Count > 0)
+        {
+            var tuplesubstanceid = "";
+            var tuplepartid = "";
+            double tuplesumquantity = 0;
+            foreach (var group in substanceIds.GroupBy(tuple => tuple.Item1))
+            {
+                foreach (var tupledata in group)
+                {
+                    tuplesubstanceid = tupledata.Item1;
+                    tuplepartid = tuplepartid + ";"+ tupledata.Item3;
+                    tuplesumquantity = tuplesumquantity +  double.Parse(tupledata.Item2);
+                }
+                finalSubstances.Add(Tuple.Create(tuplesubstanceid, tuplesumquantity.ToString(),tuplepartid));
+                tuplesumquantity = 0;
+                tuplepartid = "";
+            }
+        
+            Item newMD = null;
+            if(!String.IsNullOrEmpty(this.getProperty("MDCode","")))
+            {
+                newMD = innovator.newItem("pmi_MaterialDisclosure","get");
+                newMD.setID(this.getProperty("MDCode",""));
+                newMD.setAttribute("select","state,id,pmi_itemcode");
+                newMD = newMD.apply();
+                if(newMD.getProperty("state","") == "Active")
+                {
+                    return innovator.newError("Material Disclosure attached for the DLR is in Active status. Please proceed with a new DLR");
+                }
+            }
+            else
+            {
+                newMD = innovator.newItem("pmi_MaterialDisclosure", "add");
+                newMD.setProperty("pmi_name", "Created from the DLR request -"+this.getProperty("pmi_code"));
+                newMD.setAttribute("doGetItem", "0");
+                newMD = newMD.apply(); 
+            }
+            
+            int newMDCount = newMD.getItemCount();
+            if(!newMD.isError() && !newMD.isEmpty() && newMDCount > 0)
+            {
+                Item dlrSubstances = null;
+                Item mdSubstances = null;
+                foreach (var item in finalSubstances)
+                {
+                    string SubstanceID = item.Item1;
+                    string Quantity = item.Item2;
+                    string BomComponent = item.Item3;
+                    
+                    Item addMDSubstance = innovator.newItem("pmi_MaterialDisclr_Substance","add");
+                    addMDSubstance.setProperty("source_id", newMD.getID());
+                    addMDSubstance.setProperty("related_id", SubstanceID);
+                    addMDSubstance.setProperty("pmi_disclosed_percentage", Quantity);
+                    addMDSubstance.setProperty("pmi_disclosed_ppm", (float.Parse(Quantity) * 10000).ToString());
+                    //addMDSubstance = addMDSubstance.apply();
+                    if(mdSubstances == null)
+                    {
+                        mdSubstances = addMDSubstance;
+                    }
+                    else
+                    {
+                        mdSubstances.appendItem(addMDSubstance);
+                    }
+                    
+                    string PartName = "";
+                    if(BomComponent != "")
+                    {
+                        string[] subs = BomComponent.Split(";");
+                        foreach (var sub in subs)
+                        {
+                         Item getPartItem = innovator.applySQL(string.Format(@"select pt.keyed_name from innovator.Part pt WITH(NOLOCK) where pt.id='{0}' and pt.IS_CURRENT=1",sub));
+                       
+                        int getPartCount = getPartItem.getItemCount();
+                        if(!getPartItem.isError() && !getPartItem.isEmpty() && getPartCount > 0)
+                        {
+                            if(PartName == "")
+                            {
+                             PartName = getPartItem.getProperty("keyed_name");
+                            }
+                            else
+                            {
+                            PartName = PartName + "," + getPartItem.getProperty("keyed_name");
+                            }
+                        }
+                        }
+                    }
+                    Item addSubstanceBuilder = innovator.newItem("pmi_SubstanceBuilder_Rel","add");
+                    addSubstanceBuilder.setAttribute("doGetItem", "0");
+                    addSubstanceBuilder.setProperty("source_id", this.getProperty("id"));
+                    addSubstanceBuilder.setProperty("related_id", SubstanceID);
+                    addSubstanceBuilder.setProperty("pmi_disclosed_percentage", Quantity);
+                    addSubstanceBuilder.setProperty("pmi_part_code", PartName);
+                    addSubstanceBuilder.setProperty("pmi_mdnumber", newMD.getProperty("pmi_itemcode"));
+                    //addSubstanceBuilder = addSubstanceBuilder.apply();
+                    if(dlrSubstances == null)
+                    {
+                        dlrSubstances = addSubstanceBuilder;
+                    }
+                    else
+                    {
+                        dlrSubstances.appendItem(addSubstanceBuilder);
+                    }
+                }
+                
+                int dlrSubCount = dlrSubstances.getItemCount();
+                int mdSubCount = mdSubstances.getItemCount();
+                if(dlrSubCount > 0)
+                {
+                    Item deleteSubstanceBuilderDetails = innovator.newItem("pmi_SubstanceBuilder_Rel","delete");
+                     deleteSubstanceBuilderDetails.setAttribute("where", "[pmi_SubstanceBuilder_Rel].source_id='"+this.getProperty("id","")+"'");
+                     deleteSubstanceBuilderDetails = deleteSubstanceBuilderDetails.apply();
+                     
+                     Item applyDLRAppendedItems = null;
+                     if(dlrSubCount == 1)
+                     {
+                      applyDLRAppendedItems = innovator.applyAML("<AML>"+dlrSubstances.node.OuterXml+"</AML>");
+                     }
+                     else
+                     {
+                     applyDLRAppendedItems = innovator.applyAML(dlrSubstances.dom.OuterXml);
+                     }
+                }
+                if(mdSubCount > 0)
+                {
+                     Item deleteMDSubDetails = innovator.newItem("pmi_MaterialDisclr_Substance","delete");
+                     deleteMDSubDetails.setAttribute("where", "[pmi_MaterialDisclr_Substance].source_id='"+newMD.getProperty("id","")+"'");
+                     deleteMDSubDetails.setAttribute("select","source_id");
+                     deleteMDSubDetails = deleteMDSubDetails.apply();
+                     
+                     Item deleteMDPartDetails = innovator.newItem("pmi_MaterialDisclosurePart","delete");
+                     deleteMDPartDetails.setAttribute("where", "[pmi_MaterialDisclosurePart].source_id='"+newMD.getProperty("id","")+"'");
+                     deleteMDPartDetails.setAttribute("select","source_id");
+                     deleteMDPartDetails = deleteMDPartDetails.apply();
+                     
+                     Item deleteMDPGDetails = innovator.newItem("pmi_MDPartGroup","delete");
+                     deleteMDPGDetails.setAttribute("where", "[pmi_MDPartGroup].source_id='"+newMD.getProperty("id","")+"'");
+                     deleteMDPGDetails = deleteMDPGDetails.apply();
+                     
+                     Item applyMDAppendedItems = null;
+                     if(mdSubCount == 1)
+                     {
+                      applyMDAppendedItems = innovator.applyAML("<AML>"+mdSubstances.node.OuterXml+"</AML>");
+                     }
+                     else
+                     {
+                     applyMDAppendedItems = innovator.applyAML(mdSubstances.dom.OuterXml);
+                     }
+                }
+                //Set the newly created MD to the parent Item
+                Item setMDItem = innovator.newItem("pmi_DiscBuilderRequest","edit");
+                setMDItem.setID(this.getProperty("id",""));
+                setMDItem.setProperty("pmi_material_disclosure",newMD.getID());
+                setMDItem = setMDItem.apply();
+                
+                //Part Group and parts refered to Created MD
+                       
+                       if(AffectedItemType =="Part")
+                       {
+                            Item addPartMD = innovator.newItem("pmi_MaterialDisclosurePart","add");
+                            addPartMD.setProperty("source_id", newMD.getID());
+                            addPartMD.setProperty("related_id", AffectedItem);
+                            addPartMD = addPartMD.apply();
+                       }
+                       else
+                       {
+                          Item addPartGroupMD = innovator.newItem("pmi_MDPartGroup","add");
+                          addPartGroupMD.setProperty("source_id", newMD.getID());
+                          addPartGroupMD.setProperty("related_id", AffectedItem);
+                          addPartGroupMD = addPartGroupMD.apply();
+                       }
+                        
+                Item resultItem = innovator.newItem();
+                resultItem.setProperty("pmi_code",this.getProperty("pmi_code"));
+                resultItem.setProperty("newMDCode",newMD.getProperty("pmi_itemcode"));
+                return resultItem;
+            }
+        }
+}
+else
+{
+    return innovator.newError("Builder request tab is empty. User can run the DLR Request only if it has some requests loaded.");
+}
+}
+else
+{
+  return innovator.newError("Affected Item cannot be empty");
+}
+return this;
+string getConfigIdOfPart(Innovator inn, string partId)
+{
+    string configId = "";
+    Item getConfigId = inn.newItem("Part", "get");
+    getConfigId.setID(partId);
+    getConfigId.setAttribute("select","config_id");
+    getConfigId.setAttribute("serverEvents", "0");
+    getConfigId = getConfigId.apply();
+    if(!getConfigId.isError() && !getConfigId.isEmpty() && getConfigId.getItemCount() > 0)
+    {
+        configId = getConfigId.getProperty("config_id","");
+    }
+    return configId;
+}
+Item CheckTotalQuantityPercentage(Item builderItems)
+{
+    decimal quantity = 0.0M;
+    int builderItemsCount = builderItems.getItemCount();
+    for(int i = 0; i < builderItemsCount; i++)
+    {
+        quantity+= Convert.ToDecimal(builderItems.getItemByIndex(i).getProperty("pmi_quantity","0") == "" ? 0 : builderItems.getItemByIndex(i).getProperty("pmi_quantity","0"));
+    }
+    if(quantity > 100)
+    {
+        return innovator.newError("Total Quantity(%) is more than 100. Please adjust the quantities in Builder Tab of DLR Request.");
+    }
+    return this;
+}]]></method_code>
+  <method_type>C#</method_type>
+  <name>pmi_TriggerDLRBuilderRequest</name>
+ </Item>
+</AML>

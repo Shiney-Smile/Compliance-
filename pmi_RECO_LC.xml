@@ -1,0 +1,200 @@
+﻿<AML>
+ <Item type="Life Cycle Map" id="C0B2E0CFB39140AC912A4D35C7205392" action="add">
+  <start_state keyed_name="New" type="Life Cycle State">231097F0EAA34AA4BB1F5C60CD57E7EF</start_state>
+  <name>pmi_RECO_LC</name>
+  <Relationships>
+   <Item type="Life Cycle State" id="0E0505EE56EC4BDF9E0C3CE1737A1E2A" action="add">
+    <image>../images/LifeCycleState.svg</image>
+    <label xml:lang="en">Cancelled</label>
+    <set_is_released>0</set_is_released>
+    <set_not_lockable>0</set_not_lockable>
+    <sort_order>640</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <state_permission_id keyed_name="pmi_RECOReadOnly" type="Permission">AB3A0A8CF1144D989E23F9DC8DA442AB</state_permission_id>
+    <x>177</x>
+    <y>315</y>
+    <name>Cancelled</name>
+   </Item>
+   <Item type="Life Cycle State" id="CAE699E1A7A645E38DFFBBD2695979CC" action="add">
+    <image>../images/LifeCycleState.svg</image>
+    <label xml:lang="en">In Review</label>
+    <set_is_released>0</set_is_released>
+    <set_not_lockable>0</set_not_lockable>
+    <sort_order>384</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <state_permission_id keyed_name="pmi_RECOReadOnly" type="Permission">AB3A0A8CF1144D989E23F9DC8DA442AB</state_permission_id>
+    <x>512</x>
+    <y>174</y>
+    <name>In Review</name>
+   </Item>
+   <Item type="Life Cycle State" id="89FF6A5ECDEA4C489298E0B5CFBB95A8" action="add">
+    <image>../images/LifeCycleState.svg</image>
+    <label xml:lang="en">In Work</label>
+    <set_is_released>0</set_is_released>
+    <set_not_lockable>0</set_not_lockable>
+    <sort_order>256</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <state_permission_id keyed_name="pmi_RECOReadOnly" type="Permission">AB3A0A8CF1144D989E23F9DC8DA442AB</state_permission_id>
+    <x>292</x>
+    <y>175</y>
+    <name>In Work</name>
+   </Item>
+   <Item type="Life Cycle State" id="231097F0EAA34AA4BB1F5C60CD57E7EF" action="add">
+    <image>../images/LifeCycleState.svg</image>
+    <label xml:lang="en">New</label>
+    <set_is_released>0</set_is_released>
+    <set_not_lockable>0</set_not_lockable>
+    <sort_order>128</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <state_permission_id keyed_name="pmi_RECO" type="Permission">0607A1566A51490B83042A969885FDA5</state_permission_id>
+    <x>76</x>
+    <y>177</y>
+    <name>New</name>
+   </Item>
+   <Item type="Life Cycle State" id="9AC090705F974BE88763CB22CFA513A3" action="add">
+    <image>../images/LifeCycleState.svg</image>
+    <label xml:lang="en">Released</label>
+    <set_is_released>0</set_is_released>
+    <set_not_lockable>0</set_not_lockable>
+    <sort_order>512</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <state_permission_id keyed_name="pmi_RECOReadOnly" type="Permission">AB3A0A8CF1144D989E23F9DC8DA442AB</state_permission_id>
+    <x>735</x>
+    <y>169</y>
+    <name>Released</name>
+   </Item>
+   <Item type="Life Cycle Transition" id="252F06BD40B44E41A4DA5FC3B6E94077" action="add">
+    <from_state keyed_name="New" type="Life Cycle State">231097F0EAA34AA4BB1F5C60CD57E7EF</from_state>
+    <get_comment>0</get_comment>
+    <post_action keyed_name="pmi_RECO_UpdateHasChanges" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_UpdateHasChanges</name>
+     </Item>
+    </post_action>
+    <pre_action keyed_name="pmi_RECO_ItemTransition" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_ItemTransition</name>
+     </Item>
+    </pre_action>
+    <role keyed_name="Aras PLM" type="Identity">56A96DA9E981481688563E2D14D5D878</role>
+    <segments />
+    <sort_order>512</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <to_state keyed_name="Cancelled" type="Life Cycle State">0E0505EE56EC4BDF9E0C3CE1737A1E2A</to_state>
+    <x>0</x>
+    <y>86</y>
+   </Item>
+   <Item type="Life Cycle Transition" id="D957ECC0A6994ABF9400D51A35219508" action="add">
+    <from_state keyed_name="New" type="Life Cycle State">231097F0EAA34AA4BB1F5C60CD57E7EF</from_state>
+    <get_comment>0</get_comment>
+    <post_action keyed_name="pmi_RECO_UpdateHasChanges" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_UpdateHasChanges</name>
+     </Item>
+    </post_action>
+    <pre_action keyed_name="pmi_RECO_ItemTransition" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_ItemTransition</name>
+     </Item>
+    </pre_action>
+    <role keyed_name="Aras PLM" type="Identity">56A96DA9E981481688563E2D14D5D878</role>
+    <segments />
+    <sort_order>128</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <to_state keyed_name="In Work" type="Life Cycle State">89FF6A5ECDEA4C489298E0B5CFBB95A8</to_state>
+    <x>66</x>
+    <y>-9</y>
+   </Item>
+   <Item type="Life Cycle Transition" id="02018D58F6EB4BB0BA78A7D8E4599338" action="add">
+    <from_state keyed_name="In Work" type="Life Cycle State">89FF6A5ECDEA4C489298E0B5CFBB95A8</from_state>
+    <get_comment>0</get_comment>
+    <post_action keyed_name="pmi_RECO_UpdateHasChanges" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_UpdateHasChanges</name>
+     </Item>
+    </post_action>
+    <pre_action keyed_name="pmi_RECO_ItemTransition" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_ItemTransition</name>
+     </Item>
+    </pre_action>
+    <role keyed_name="Aras PLM" type="Identity">56A96DA9E981481688563E2D14D5D878</role>
+    <segments />
+    <sort_order>640</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <to_state keyed_name="Cancelled" type="Life Cycle State">0E0505EE56EC4BDF9E0C3CE1737A1E2A</to_state>
+    <x>-57</x>
+    <y>83</y>
+   </Item>
+   <Item type="Life Cycle Transition" id="19A3964B004644A8B04C0688B4B0AEB6" action="add">
+    <from_state keyed_name="In Work" type="Life Cycle State">89FF6A5ECDEA4C489298E0B5CFBB95A8</from_state>
+    <get_comment>0</get_comment>
+    <pre_action keyed_name="pmi_RECO_ItemTransition" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_ItemTransition</name>
+     </Item>
+    </pre_action>
+    <role keyed_name="Aras PLM" type="Identity">56A96DA9E981481688563E2D14D5D878</role>
+    <segments />
+    <sort_order>256</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <to_state keyed_name="In Review" type="Life Cycle State">CAE699E1A7A645E38DFFBBD2695979CC</to_state>
+    <x>77</x>
+    <y>-8</y>
+   </Item>
+   <Item type="Life Cycle Transition" id="8867F48EB32C49A8966E9303822E8FD8" action="add">
+    <from_state keyed_name="In Work" type="Life Cycle State">89FF6A5ECDEA4C489298E0B5CFBB95A8</from_state>
+    <get_comment>0</get_comment>
+    <pre_action keyed_name="pmi_RECO_ItemTransition" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_ItemTransition</name>
+     </Item>
+    </pre_action>
+    <role keyed_name="Aras PLM" type="Identity">56A96DA9E981481688563E2D14D5D878</role>
+    <segments>190,89</segments>
+    <sort_order>768</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <to_state keyed_name="New" type="Life Cycle State">231097F0EAA34AA4BB1F5C60CD57E7EF</to_state>
+    <x>-77</x>
+    <y>-72</y>
+   </Item>
+   <Item type="Life Cycle Transition" id="6979243721E44866AFDF4A34560CF554" action="add">
+    <from_state keyed_name="In Review" type="Life Cycle State">CAE699E1A7A645E38DFFBBD2695979CC</from_state>
+    <get_comment>0</get_comment>
+    <pre_action keyed_name="pmi_RECO_ItemTransition" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_ItemTransition</name>
+     </Item>
+    </pre_action>
+    <role keyed_name="Aras PLM" type="Identity">56A96DA9E981481688563E2D14D5D878</role>
+    <segments>409,84</segments>
+    <sort_order>896</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <to_state keyed_name="In Work" type="Life Cycle State">89FF6A5ECDEA4C489298E0B5CFBB95A8</to_state>
+    <x>-75</x>
+    <y>-77</y>
+   </Item>
+   <Item type="Life Cycle Transition" id="E8BA669054F348E9911A70BC85D5B59E" action="add">
+    <from_state keyed_name="In Review" type="Life Cycle State">CAE699E1A7A645E38DFFBBD2695979CC</from_state>
+    <get_comment>0</get_comment>
+    <post_action keyed_name="pmi_RECO_ItemReleased" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_ItemReleased</name>
+     </Item>
+    </post_action>
+    <pre_action keyed_name="pmi_RECO_ItemTransition" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_RECO_ItemTransition</name>
+     </Item>
+    </pre_action>
+    <role keyed_name="Aras PLM" type="Identity">56A96DA9E981481688563E2D14D5D878</role>
+    <segments />
+    <sort_order>384</sort_order>
+    <source_id keyed_name="pmi_RECO_LC" type="Life Cycle Map">C0B2E0CFB39140AC912A4D35C7205392</source_id>
+    <to_state keyed_name="Released" type="Life Cycle State">9AC090705F974BE88763CB22CFA513A3</to_state>
+    <x>78</x>
+    <y>-8</y>
+   </Item>
+  </Relationships>
+ </Item>
+</AML>
