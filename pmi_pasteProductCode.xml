@@ -1,0 +1,32 @@
+﻿<AML>
+ <Item type="PresentationConfiguration" id="A05B27FF570F4616837ED2AFE8976D50" action="add">
+  <color>#f0e68c</color>
+  <name>pmi_pasteProductCode</name>
+  <Relationships>
+   <Item type="PresentationCommandBarSection" id="F686BD3BE08946CFA636E5B0598686B3" action="add">
+    <related_id keyed_name="pmi_pasteCode" type="CommandBarSection">4672EF9FAAC34ECB8913B2754BB37F14</related_id>
+    <role keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</role>
+    <sort_order>5120</sort_order>
+    <source_id keyed_name="pmi_pasteProductCode" type="PresentationConfiguration">A05B27FF570F4616837ED2AFE8976D50</source_id>
+   </Item>
+   <Item type="PresentationCommandBarSection" id="DFA870A2B42A4235A3288ED46135764E" action="add">
+    <related_id keyed_name="pmi_CopyWPParts" type="CommandBarSection">400CAF2B1C7F46AFB244FC0923F720C6</related_id>
+    <role keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</role>
+    <sort_order>5248</sort_order>
+    <source_id keyed_name="pmi_pasteProductCode" type="PresentationConfiguration">A05B27FF570F4616837ED2AFE8976D50</source_id>
+   </Item>
+   <Item type="PresentationCommandBarSection" id="9703E71AAA524F4BB87940EFCAB6C0CC" action="add">
+    <related_id keyed_name="pmi_PromoteRelationshipItem" type="CommandBarSection">89770991D2F74613AA5D775110BF7C7E</related_id>
+    <role keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</role>
+    <sort_order>5376</sort_order>
+    <source_id keyed_name="pmi_pasteProductCode" type="PresentationConfiguration">A05B27FF570F4616837ED2AFE8976D50</source_id>
+   </Item>
+   <Item type="PresentationCommandBarSection" id="5BFBC496BA1D483F89995C89257AC735" action="add">
+    <related_id keyed_name="pmi_GenerateBatchLabel" type="CommandBarSection">A9E38891F0ED407883E6C89E886B68EF</related_id>
+    <role keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</role>
+    <sort_order>6000</sort_order>
+    <source_id keyed_name="pmi_pasteProductCode" type="PresentationConfiguration">A05B27FF570F4616837ED2AFE8976D50</source_id>
+   </Item>
+  </Relationships>
+ </Item>
+</AML>

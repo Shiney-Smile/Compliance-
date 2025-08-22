@@ -1,0 +1,609 @@
+﻿<AML>
+ <Item type="Form" id="99FD1C41B70246C99A4EB918CC748997" action="add">
+  <height>420</height>
+  <stylesheet><![CDATA[../styles/default.css]]></stylesheet>
+  <width>660</width>
+  <name>pmi_UpdateBatchAttributes</name>
+  <Relationships>
+   <Item type="Body" id="6C9EEC33C1F94A83B4642E250C2D30F1" action="add">
+    <sort_order>128</sort_order>
+    <source_id keyed_name="pmi_UpdateBatchAttributes" type="Form">99FD1C41B70246C99A4EB918CC748997</source_id>
+    <Relationships>
+     <Item type="Field" id="847718145AA44098929A8CC0E61F719B" action="add">
+      <border_width>1</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>html</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <html_code><![CDATA[<img src="..\imagesLegacy\100x4_divider.gif" width="630" height="1">]]></html_code>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <orientation>horizontal</orientation>
+      <show_help>1</show_help>
+      <sort_order>2816</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <x>5</x>
+      <y>120</y>
+      <name>line1</name>
+     </Item>
+     <Item type="Field" id="C7A19B850758495EB5D8B08270E645A2" action="add">
+      <border_width>1</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>html</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <html_code><![CDATA[<img src="..\imagesLegacy\100x4_divider.gif" width="630" height="1">]]></html_code>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <show_help>1</show_help>
+      <sort_order>2816</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <x>5</x>
+      <y>210</y>
+      <name>line2</name>
+     </Item>
+     <Item type="Field" id="F4A084EAA4F74D6BB52011CA0837F60E" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>button</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Cancel Update</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <show_help>1</show_help>
+      <sort_order>256</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <x>320</x>
+      <y>360</y>
+      <name>pmi_cancelbtn</name>
+      <Relationships>
+       <Item type="Field Event" id="8833168508EA4C1E9A7BF6248FD3A37F" action="add">
+        <field_event>onclick</field_event>
+        <related_id keyed_name="pmi_UpdateBatchAttributes_cancel" type="Method">
+         <Item type="Method" action="get" select="id">
+          <name>pmi_UpdateBatchAttributes_cancel</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="pmi_cancelbtn" type="Field">F4A084EAA4F74D6BB52011CA0837F60E</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+     <Item type="Field" id="9229C76EB5564F71977A5BFE523D8C44" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>label</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>12pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Confirmed</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <show_help>1</show_help>
+      <sort_order>2688</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <text_align>center</text_align>
+      <x>10</x>
+      <y>280</y>
+      <name>pmi_confirmed</name>
+     </Item>
+     <Item type="Field" id="984C62D046FC494D8D205C5604811CCE" action="add">
+      <border_width>0</border_width>
+      <display_length>150</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>text</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Current Quantity</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_current_quantity" type="Property">D10584C5A02F4200B393BF9B4F273E60</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>1152</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>3968</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>460</x>
+      <y>230</y>
+      <name>pmi_current_quantity</name>
+      <Relationships>
+       <Item type="Field Event" id="7F6816F45B4648C08245567F2DD48C6E" action="add">
+        <field_event>onchange</field_event>
+        <related_id keyed_name="pmi_UpdateBatchAttributes_Valid" type="Method">
+         <Item type="Method" action="get" select="id">
+          <name>pmi_UpdateBatchAttributes_Valid</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="pmi_current_quantity" type="Field">984C62D046FC494D8D205C5604811CCE</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+     <Item type="Field" id="993642B9E8924CCDA6977367284508A7" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>date</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Expected Delivery Date</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_expected_delivery_date" type="Property">BF4622012F284176B9D9516835731313</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>1792</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>4993</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>460</x>
+      <y>15</y>
+      <name>pmi_expected_delivery_date</name>
+     </Item>
+     <Item type="Field" id="E7DFADD726EF4CFE80678AD0BD1F4093" action="add">
+      <border_width>0</border_width>
+      <display_length>150</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>dropdown</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Cut Rag Drier</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_cut_rag_drier" type="Property">12EE3056AA72404390D9C7A42309D74E</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>2176</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>95513</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>100</x>
+      <y>65</y>
+      <name>pmi_cut_rag_drier</name>
+     </Item>
+     <Item type="Field" id="85FD24E3CC3B4EF4A0646DD7F7BB62D7" action="add">
+      <border_width>0</border_width>
+      <display_length>150</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>text</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Desire OV</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_desire_ov" type="Property">286A9E5379C64350912A8C396592310D</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>2304</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>95641</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>280</x>
+      <y>65</y>
+      <name>pmi_desire_ov</name>
+     </Item>
+     <Item type="Field" id="C4EFBFB3C92D491DB3557234B8BCB611" action="add">
+      <border_width>0</border_width>
+      <display_length>100</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>label</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>12pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Draft</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <show_help>1</show_help>
+      <sort_order>2432</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <text_align>center</text_align>
+      <x>23</x>
+      <y>50</y>
+      <name>pmi_draft</name>
+     </Item>
+     <Item type="Field" id="A48059B4DD814D8E8CC5A3B0570420FC" action="add">
+      <border_width>0</border_width>
+      <display_length>150</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>text</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Expected Quantity Per Batch</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_expected_quantity" type="Property">5929FABC059D48B8A4EF85AD07B85CEF</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>1408</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>4995</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>100</x>
+      <y>15</y>
+      <name>pmi_expected_quantity</name>
+      <Relationships>
+       <Item type="Field Event" id="97CD09ECA8344D2DB39DE969FD3E90FF" action="add">
+        <field_event>onchange</field_event>
+        <related_id keyed_name="pmi_UpdateBatchAttributes_Valid" type="Method">
+         <Item type="Method" action="get" select="id">
+          <name>pmi_UpdateBatchAttributes_Valid</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="pmi_expected_quantity" type="Field">A48059B4DD814D8E8CC5A3B0570420FC</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+     <Item type="Field" id="F159D9A78209400BA56BC52A83A3658E" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>date</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Expiration Date</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_expiration_date" type="Property">23E128865F3C45509B8802CF23913730</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>3072</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>4096</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>280</x>
+      <y>290</y>
+      <name>pmi_expiration_date</name>
+     </Item>
+     <Item type="Field" id="FA124660F3874E0FB2F7A285AA26351E" action="add">
+      <border_width>1</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>html</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <html_code><![CDATA[<img src="..\imagesLegacy\1x1.gif" width="620" height="400">]]></html_code>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <show_help>1</show_help>
+      <sort_order>128</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <x>10</x>
+      <y>0</y>
+      <z_index>-1</z_index>
+      <name>pmi_groupbox</name>
+     </Item>
+     <Item type="Field" id="2005055D7DB248DC803A3C2C0AE10E30" action="add">
+      <border_width>0</border_width>
+      <display_length>140</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>text</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Number of Batches</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <show_help>1</show_help>
+      <sort_order>1664</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <x>460</x>
+      <y>65</y>
+      <name>pmi_number_of_batches</name>
+     </Item>
+     <Item type="Field" id="68F8B7D66F134361AFF233C4B7B60778" action="add">
+      <border_width>0</border_width>
+      <display_length>130</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>date</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Planned Production Date</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_planned_prod_date" type="Property">A8545F11305F4DC489C5886B535AA806</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>1280</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>95385</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>100</x>
+      <y>150</y>
+      <name>pmi_planned_prod_date</name>
+     </Item>
+     <Item type="Field" id="8C758E3CFF8D49FDA75CA21DC4341ABA" action="add">
+      <border_width>0</border_width>
+      <display_length>150</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>text</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Produced/Delivered Quantity</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_produced_delivered_quantity" type="Property">9CA06780B9F640A1AF38D3E1C57CACD6</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>512</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>3712</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>100</x>
+      <y>228</y>
+      <name>pmi_produced_delivered_quantity</name>
+      <Relationships>
+       <Item type="Field Event" id="01CBF07D25F24DA88547CA337879D539" action="add">
+        <field_event>onchange</field_event>
+        <related_id keyed_name="pmi_UpdateBatchAttributes_Valid" type="Method">
+         <Item type="Method" action="get" select="id">
+          <name>pmi_UpdateBatchAttributes_Valid</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="pmi_produced_delivered_quantity" type="Field">8C758E3CFF8D49FDA75CA21DC4341ABA</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+     <Item type="Field" id="784855F798A74E5DAB4187A39496B99D" action="add">
+      <border_width>0</border_width>
+      <display_length>130</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>date</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Production Delivery Date</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_production_delivery_date" type="Property">CEDEEA754F504A569DF2704156B64A6A</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>640</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>3840</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>280</x>
+      <y>230</y>
+      <name>pmi_production_delivery_date</name>
+     </Item>
+     <Item type="Field" id="4DBC929CE14B46408A1FAA480AA633DB" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>date</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Released Date</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_released_date" type="Property">73ECBD5F17A646438D0A7C25978193D5</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>3200</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>4224</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>100</x>
+      <y>290</y>
+      <name>pmi_released_date</name>
+     </Item>
+     <Item type="Field" id="5464E0E89DE042EE97914F6F2E0BDC4D" action="add">
+      <border_width>0</border_width>
+      <display_length>150</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>text</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Released Quantity</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <propertytype_id keyed_name="pmi_released_quantity" type="Property">8C8B4BCC4ACA4B44BFE4500541E1DEB7</propertytype_id>
+      <show_help>1</show_help>
+      <sort_order>768</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_index>4352</tab_index>
+      <tab_stop>1</tab_stop>
+      <x>460</x>
+      <y>290</y>
+      <name>pmi_released_quantity</name>
+      <Relationships>
+       <Item type="Field Event" id="C1FEAAAA03D045AEBF1E1B014EA22272" action="add">
+        <field_event>onchange</field_event>
+        <related_id keyed_name="pmi_UpdateBatchAttributes_Valid" type="Method">
+         <Item type="Method" action="get" select="id">
+          <name>pmi_UpdateBatchAttributes_Valid</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="pmi_released_quantity" type="Field">5464E0E89DE042EE97914F6F2E0BDC4D</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+     <Item type="Field" id="C02A168429FD4B8A900A90481E7F97EF" action="add">
+      <border_width>0</border_width>
+      <display_length>150</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>text</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">SAP Process Order</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <show_help>1</show_help>
+      <sort_order>2048</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <x>280</x>
+      <y>150</y>
+      <name>pmi_sap_process_number</name>
+     </Item>
+     <Item type="Field" id="A4D2CF3F9E2041B6BDD7FD4A5998EBC5" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>label</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>12pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Submitted</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <show_help>1</show_help>
+      <sort_order>2560</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <text_align>center</text_align>
+      <x>10</x>
+      <y>150</y>
+      <name>pmi_Submitted</name>
+     </Item>
+     <Item type="Field" id="8ACB9ABB3B324CEDA331EA107E454179" action="add">
+      <border_width>0</border_width>
+      <display_length>150</display_length>
+      <display_length_unit>px</display_length_unit>
+      <field_type>dropdown</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">UoM</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <show_help>1</show_help>
+      <sort_order>2944</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <x>280</x>
+      <y>17</y>
+      <name>pmi_unit_of_measure</name>
+     </Item>
+     <Item type="Field" id="A422130B40F24262BAD345DF62BB65B8" action="add">
+      <border_width>0</border_width>
+      <display_length_unit>px</display_length_unit>
+      <field_type>button</field_type>
+      <font_color>#333333</font_color>
+      <font_family>arial, helvetica, sans-serif</font_family>
+      <font_size>8pt</font_size>
+      <font_weight>bold</font_weight>
+      <is_disabled>0</is_disabled>
+      <is_visible>1</is_visible>
+      <label xml:lang="en">Confirm Update</label>
+      <label_position>top</label_position>
+      <list_no_blank>0</list_no_blank>
+      <show_help>1</show_help>
+      <sort_order>384</sort_order>
+      <source_id keyed_name="6C9EEC33C1F94A83B4642E250C2D30F1" type="Body">6C9EEC33C1F94A83B4642E250C2D30F1</source_id>
+      <tab_stop>1</tab_stop>
+      <x>185</x>
+      <y>360</y>
+      <name>pmi_updatebtn</name>
+      <Relationships>
+       <Item type="Field Event" id="F3A025B6FA4A42298E6B8163C3062A41" action="add">
+        <field_event>onclick</field_event>
+        <related_id keyed_name="pmi_UpdateBatchAttributes_update" type="Method">
+         <Item type="Method" action="get" select="id">
+          <name>pmi_UpdateBatchAttributes_update</name>
+         </Item>
+        </related_id>
+        <sort_order>128</sort_order>
+        <source_id keyed_name="pmi_updatebtn" type="Field">A422130B40F24262BAD345DF62BB65B8</source_id>
+       </Item>
+      </Relationships>
+     </Item>
+    </Relationships>
+   </Item>
+   <Item type="Form Event" id="319B2100F9BA4EF2941E4069691EF7D4" action="add">
+    <form_event>onload</form_event>
+    <related_id keyed_name="pmi_LoadListsOnForm" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_LoadListsOnForm</name>
+     </Item>
+    </related_id>
+    <sort_order>128</sort_order>
+    <source_id keyed_name="pmi_UpdateBatchAttributes" type="Form">99FD1C41B70246C99A4EB918CC748997</source_id>
+   </Item>
+   <Item type="Form Event" id="6A8DDC2C567B4424B561C58EEDA2A04C" action="add">
+    <form_event>onload</form_event>
+    <related_id keyed_name="pmi_EnableDisableValuesOnForm" type="Method">
+     <Item type="Method" action="get" select="id">
+      <name>pmi_EnableDisableValuesOnForm</name>
+     </Item>
+    </related_id>
+    <sort_order>256</sort_order>
+    <source_id keyed_name="pmi_UpdateBatchAttributes" type="Form">99FD1C41B70246C99A4EB918CC748997</source_id>
+   </Item>
+  </Relationships>
+ </Item>
+</AML>

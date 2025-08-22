@@ -1,0 +1,31 @@
+﻿<AML>
+ <Item type="Method" id="1A55C96A9CCC4AFCA5FA5AC4FA6AEEFC" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[let wnd = aras.getMainWindow();
+const topWnd = aras.getMostTopWindowWithAras(window);
+wnd = wnd === topWnd ? wnd.main : topWnd;
+const selectedIds = grid.getSelectedItemIds();
+const source_itemID = wnd.itemID;
+const propertyCheck = (options.itemTypeName === 'pmi_PPO_AffectedItems_Rel') ? 'SOURCE_ID' : 'ID';
+const formNd = aras.getItemByName('Form', 'pmi_UpdateBatchAttributes', 0);
+const param = {};
+param.title = 'Update Batch Attributes';
+param.formId = formNd.getAttribute('id');
+param.itemIds = selectedIds;
+param.source_ItemID = source_itemID;
+param.itemTypeName = options.itemTypeName;
+param.propertyCheck = propertyCheck;
+param.aras = aras;
+param.isEditMode = true;
+const width = top.aras.getItemProperty(formNd, 'width', 345);
+const height = top.aras.getItemProperty(formNd, 'height', 175);
+const option = {
+    dialogWidth: width,
+    dialogHeight: height,
+    resizable: true
+};
+aras.modalDialogHelper.show('DefaultPopup', wnd, param, option, 'ShowFormAsADialog.html');]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_UpdateBatchAttributes_click</name>
+ </Item>
+</AML>

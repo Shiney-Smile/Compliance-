@@ -1,0 +1,77 @@
+﻿<AML>
+ <Item type="Method" id="F10C7D201C714DD889D464DD1F5C2B42" action="add">
+  <comments>This Method will enable or disable values on form based on PPO state</comments>
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[let wnd = aras.getMainWindow();
+const innovator = new Innovator();
+const topWnd = aras.getMostTopWindowWithAras(window);
+wnd = wnd === topWnd ? wnd.main : topWnd;
+
+const itemID = (topWnd.itemTypeName === 'pmi_PPO') ?  topWnd.itemID : topWnd.fromRelationships;
+
+let ppoItem = innovator.newItem('pmi_ppo','get');
+ppoItem.setAttribute('select','state');
+ppoItem.setAttribute('serverEvents','0');
+ppoItem.setID(itemID);
+ppoItem = ppoItem.apply();
+if(ppoItem.isError())
+{
+    return aras.AlertError('Error in fetching PPO Item'+ppoItem.getErrorString());
+}
+const state = ppoItem.getProperty('state');
+if(state)
+{
+    const expectedQuantity = getFieldByName('pmi_expected_quantity');
+    const uom = getFieldByName('pmi_unit_of_measure');
+    const cutRagDrier = getFieldByName('pmi_cut_rag_drier');
+    const desireOV = getFieldByName('pmi_desire_ov');
+    const noOfBatches = getFieldByName('pmi_number_of_batches');
+    const sapProcessOrder = getFieldByName('pmi_sap_process_number');
+    const producedDelivQuant = getFieldByName('pmi_produced_delivered_quantity');
+    const currentQuant = getFieldByName('pmi_current_quantity');
+    const releasedQuant = getFieldByName('pmi_released_quantity');
+    if(state !== 'Draft')
+    {
+        expectedQuantity.getElementsByTagName("input")[0].disabled = true;
+        uom.getElementsByTagName("input")[0].disabled = true;
+        uom.getElementsByTagName("button")[0].disabled = true;
+        setTimeout(function(){
+        getFieldByName('pmi_expected_delivery_date').getElementsByTagName("input")[0].disabled = true;
+        getFieldByName('pmi_expected_delivery_date').getElementsByTagName("input")[0].src = "../images/calendar-disabled.svg";
+        }, 100);
+        cutRagDrier.getElementsByTagName("input")[0].disabled = true;
+        cutRagDrier.getElementsByTagName("button")[0].disabled = true;
+        desireOV.getElementsByTagName("input")[0].disabled = true;
+        noOfBatches.getElementsByTagName("input")[0].disabled = true;
+    }
+    if(state !== 'Submitted')
+    {
+        setTimeout(function(){
+        getFieldByName('pmi_planned_prod_date').getElementsByTagName("input")[0].disabled = true;
+        getFieldByName('pmi_planned_prod_date').getElementsByTagName("input")[0].src = "../images/calendar-disabled.svg";
+        }, 100);
+        sapProcessOrder.getElementsByTagName("input")[0].disabled = true;
+    }
+    if(state !== 'Confirmed')
+    {
+        producedDelivQuant.getElementsByTagName("input")[0].disabled = true;
+        setTimeout(function(){
+        getFieldByName('pmi_production_delivery_date').getElementsByTagName("input")[0].disabled = true;
+        getFieldByName('pmi_production_delivery_date').getElementsByTagName("input")[0].src = "../images/calendar-disabled.svg";
+        }, 100);
+        setTimeout(function(){
+        getFieldByName('pmi_expiration_date').getElementsByTagName("input")[0].disabled = true;
+        getFieldByName('pmi_expiration_date').getElementsByTagName("input")[0].src = "../images/calendar-disabled.svg";
+        }, 100);
+        setTimeout(function(){
+        getFieldByName('pmi_released_date').getElementsByTagName("input")[0].disabled = true;
+        getFieldByName('pmi_released_date').getElementsByTagName("input")[0].src = "../images/calendar-disabled.svg";
+        }, 100);
+        currentQuant.getElementsByTagName("input")[0].disabled = true;
+        releasedQuant.getElementsByTagName("input")[0].disabled = true;
+    }
+}]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_EnableDisableValuesOnForm</name>
+ </Item>
+</AML>

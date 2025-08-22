@@ -1,0 +1,52 @@
+﻿<AML>
+ <Item type="Method" id="F185C912F1404C46ACB831958ED49AF3" action="add">
+  <comments>This Method will load lists on Form</comments>
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[const inn = top.aras.newIOMInnovator();
+const uoMDropdownList = [];
+const cutRagDropdownList = [];
+let getUoMList = inn.newItem("Value","get"); 
+getUoMList.setAttribute("select","value,label");
+getUoMList.setProperty("source_id","19B4424813F74CB3974AE950438FA28C");
+getUoMList = getUoMList.apply();
+if(getUoMList.isError())
+{
+    return aras.AlertError('Error in fetching Values of list'+getUoMList.getErrorString());
+}
+const valueCount = getUoMList.getItemCount();
+const uomList = getFieldComponentByName("pmi_unit_of_measure");
+uoMDropdownList.push({label: "", value: ""});
+for(let index = 0; index < valueCount; index++)
+{
+	const itemByIndex = getUoMList.getItemByIndex(index);
+	
+	uoMDropdownList.push({label: itemByIndex.getProperty("label"), value: itemByIndex.getProperty("value")});
+}
+
+const uomListVal = uoMDropdownList;
+uomList.component.setState({list: uomListVal.map(JSON.stringify).filter((e,i,a) => i === a.indexOf(e)).map(JSON.parse)});
+
+let getCutRagList = inn.newItem("Value","get"); 
+getCutRagList.setAttribute("select","value,label");
+getCutRagList.setProperty("source_id","4331BEEA6A3E4DCBB22626F750636D6C");
+getCutRagList = getCutRagList.apply();
+if(getCutRagList.isError())
+{
+    return aras.AlertError('Error in fetching Values of list'+getCutRagList.getErrorString());
+}
+const CutRagValueCount = getCutRagList.getItemCount();
+const cutRagList = getFieldComponentByName("pmi_cut_rag_drier");
+cutRagDropdownList.push({label: "", value: ""});
+for(let index = 0; index < CutRagValueCount; index++)
+{
+	const itemByIndex = getCutRagList.getItemByIndex(index);
+	
+	cutRagDropdownList.push({label: itemByIndex.getProperty("label"), value: itemByIndex.getProperty("value")});
+}
+
+const cutRagListVal = cutRagDropdownList;
+cutRagList.component.setState({list: cutRagListVal.map(JSON.stringify).filter((e,i,a) => i === a.indexOf(e)).map(JSON.parse)});]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_LoadListsOnForm</name>
+ </Item>
+</AML>

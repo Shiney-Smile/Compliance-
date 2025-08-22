@@ -1,0 +1,23 @@
+﻿<AML>
+ <Item type="CommandBarSection" id="89770991D2F74613AA5D775110BF7C7E" action="add">
+  <classification>Data Model</classification>
+  <location keyed_name="ItemView.RelationshipsGridContextMenu" type="cui_Location">12CC1786F8C54D569692F13B212B4634</location>
+  <name>pmi_PromoteRelationshipItem</name>
+  <Relationships>
+   <Item type="CommandBarSectionItem" id="D283CD4F92B5471783A7A85CACB38F39" action="add">
+    <action>Add</action>
+    <related_id keyed_name="pmi_PromoteRelationshipItem" type="CommandBarItem">147A0CA68EEC415E95444DBD80CD8D1F</related_id>
+    <role keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</role>
+    <sort_order>5000</sort_order>
+    <source_id keyed_name="pmi_PromoteRelationshipItem" type="CommandBarSection">89770991D2F74613AA5D775110BF7C7E</source_id>
+   </Item>
+   <Item type="CommandBarSectionItem" id="E08B1C630F0C4B9EB9083EA35B637AE3" action="add">
+    <action>Add</action>
+    <related_id keyed_name="pmi_UpdateBatchAttributes" type="CommandBarItem">7868ADA054E94B3DBBAEE24A33940F16</related_id>
+    <role keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</role>
+    <sort_order>6000</sort_order>
+    <source_id keyed_name="pmi_PromoteRelationshipItem" type="CommandBarSection">89770991D2F74613AA5D775110BF7C7E</source_id>
+   </Item>
+  </Relationships>
+ </Item>
+</AML>

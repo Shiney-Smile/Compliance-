@@ -1,0 +1,95 @@
+﻿<AML>
+ <Item type="Method" id="E661DA8465C348F7A5724D6F32E5207D" action="add">
+  <execution_allowed_to keyed_name="World" type="Identity">A73B655731924CD0B027E4F4D5FCC0A9</execution_allowed_to>
+  <method_code><![CDATA[const innovator = new Innovator();
+const batchAttributes = {
+    'pmi_current_quantity': 'Current Quantity',
+    'pmi_expected_quantity': 'Expected Quantity Per Batch',
+    'pmi_produced_delivered_quantity': 'Produced / Delivered Quantity',
+    'pmi_released_quantity': 'Released Quantity',
+    'pmi_production_delivery_date': 'Production Delivery Date',
+    'pmi_expected_delivery_date': 'Expected Delivery Date',
+    'pmi_cut_rag_drier': 'Cut Rag Drier',
+    'pmi_desire_ov': 'Desire OV',
+    'pmi_number_of_batches': 'Number of Batches',
+    'pmi_planned_prod_date': 'Planned Production Date',
+    'pmi_sap_process_number': 'SAP Process Order',
+    'pmi_unit_of_measure': 'Unit Of Measure',
+    'pmi_released_date': 'Released Date',
+    'pmi_expiration_date': 'Expiration Date',
+};
+let callServerMethod = false;
+const itemIds = parent.dialogArguments.itemIds.join('\',\'');
+const source_id = parent.dialogArguments.source_ItemID;
+const propertyCheck = parent.dialogArguments.propertyCheck;
+const itemTypeName =  parent.dialogArguments.itemTypeName;
+let callMethod = innovator.newItem("pmi_Parameters", "pmi_UpdateBatchAttributes_Server");
+callMethod.setProperty('itemIds', itemIds);
+callMethod.setProperty('propertyCheck', propertyCheck);
+for (const batchAttribute in batchAttributes) {
+    const getValue = document.getElementsByName(batchAttribute)[1].value;
+    if (getValue) {
+        if (batchAttribute === 'pmi_production_delivery_date' || batchAttribute === 'pmi_expected_delivery_date') {
+            const validDateCheck = isDateValid(getValue);
+            if (!validDateCheck) {
+                document.getElementsByName(batchAttribute)[1].value = '';
+                return aras.AlertError('Date entered for ' + batchAttributes[batchAttribute] + ' is not valid. Please select the date from date picker to proceed further.');
+            }
+        }
+        if(batchAttribute === "pmi_desire_ov")
+        {
+            const validInteger = isDesireOV_Valid(getValue);
+            if (!validInteger) {
+                document.getElementsByName(batchAttribute)[1].value = '';
+                return aras.AlertError('value of entered for' + batchAttributes[batchAttribute] + ' is not valid. Please select interger from 0 to 100 to proceed further.');
+            }
+        }
+        callServerMethod = true;
+        callMethod.setProperty('itemTypeName',itemTypeName);
+        callMethod.setProperty('source_ItemID',source_id);
+        callMethod.setProperty(batchAttribute, getValue);
+    }
+}
+if (callServerMethod) {
+    callMethod = callMethod.apply();
+} else {
+    return aras.AlertError("No Batch item attributes values provided to update. Kindly provide some input to proceed further.");
+}
+if (callMethod.isError()) {
+    parent.close();
+    return aras.AlertError("Error updating the Batch item attributes " + callMethod.getErrorString());
+} else {
+    parent.close();
+    aras.AlertSuccess("Batch attributes updated successfully.");
+    if (aras.getMostTopWindowWithAras(window).frames.relationships) {
+        const iFramesCollection = aras.getMostTopWindowWithAras(window).frames.relationships.iframesCollection;
+        for (const tabId in iFramesCollection) {
+            if ({}.hasOwnProperty.call(iFramesCollection, tabId)) {
+                const relshipTypeNd = aras.getRelationshipType(tabId);
+                const relshipTypeName = aras.getItemProperty(relshipTypeNd.node, "name");
+                if (relshipTypeName === "pmi_PPO_AffectedItems_Rel") {
+                    iFramesCollection[tabId].contentWindow.location.reload();
+                }
+            }
+        }
+    }
+}
+
+function isDateValid(dateString, propertyName, propertyLabel) {
+    const isValidDate = Date.parse(dateString);
+    if (isNaN(isValidDate)) {
+        return false;
+    }
+    return true;
+}
+function isDesireOV_Valid(getValue, propertyName, propertyLabel) {
+    if(getValue >= 0 && getValue <= 100)
+    {
+        return true;
+    }
+    return false;
+}]]></method_code>
+  <method_type>JavaScript</method_type>
+  <name>pmi_UpdateBatchAttributes_update</name>
+ </Item>
+</AML>
